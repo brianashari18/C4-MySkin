@@ -9,29 +9,57 @@ import SwiftUI
 
 /// Single product card used in the 2-column search grid.
 struct ProductGridItemView: View {
+    private let imageHeight: CGFloat = 160
 
     let productName: String
     var image: UIImage? = nil
+    var imageURL: String? = nil
+    var badgeText: String? = nil
 
     var body: some View {
         VStack(alignment: .center, spacing: 10) {
             // Product image / placeholder
-            Group {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    ZStack {
-                        Color.App.lightBlue.opacity(0.2)
-                        Image(systemName: "photo")
-                            .font(.system(size: 28, weight: .light))
-                            .foregroundStyle(Color.App.mediumBlue.opacity(0.5))
+            ZStack(alignment: .topLeading) {
+                Group {
+                    if let image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(10)
+                    } else if let imageURL, let url = URL(string: imageURL) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case let .success(image):
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(10)
+                            case .failure, .empty:
+                                placeholderView
+                            @unknown default:
+                                placeholderView
+                            }
+                        }
+                    } else {
+                        placeholderView
                     }
+                }
+
+                if let badgeText, !badgeText.isEmpty {
+                    Text(badgeText)
+                        .font(Font.App.nunitoRounded(size: 10, weight: .bold))
+                        .foregroundStyle(Color.App.darkBlue)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule()
+                                .fill(Color.App.sunnyYellow.opacity(0.95))
+                        )
+                        .padding(8)
                 }
             }
             .frame(maxWidth: .infinity)
-            .aspectRatio(1, contentMode: .fit)
+            .frame(height: imageHeight)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
@@ -44,6 +72,15 @@ struct ProductGridItemView: View {
                 .foregroundStyle(Color.App.darkBlue)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
+        }
+    }
+
+    private var placeholderView: some View {
+        ZStack {
+            Color.App.lightBlue.opacity(0.2)
+            Image(systemName: "photo")
+                .font(.system(size: 28, weight: .light))
+                .foregroundStyle(Color.App.mediumBlue.opacity(0.5))
         }
     }
 }

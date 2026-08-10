@@ -13,9 +13,6 @@ struct ProductSearchView: View {
 
     @ObservedObject var viewModel: ProductValidationViewModel
 
-    // Stub product list
-    private let stubProducts: [String] = Array(repeating: "Product name", count: 8)
-
     private let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
@@ -30,7 +27,7 @@ struct ProductSearchView: View {
                 // MARK: - Navigation Bar
                 HStack {
                     Button {
-                        viewModel.currentStep = .imagePicker
+                        viewModel.leaveSearch()
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
@@ -53,14 +50,17 @@ struct ProductSearchView: View {
                     TextField("Search", text: $viewModel.searchText)
                         .font(Font.App.nunitoRounded(size: 16))
                         .foregroundStyle(Color.App.textDark)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
 
                     Button {
-                        // Voice search stub
+                        Task { await viewModel.searchProducts() }
                     } label: {
                         Image(systemName: "mic")
                             .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
                             .font(.system(size: 16))
                     }
+                    .accessibilityLabel("Search products")
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
@@ -74,19 +74,95 @@ struct ProductSearchView: View {
 
                 // MARK: - Product Grid
                 ScrollView {
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(Array(stubProducts.enumerated()), id: \.offset) { _, name in
-                            ProductGridItemView(productName: name)
-                                .onTapGesture {
-                                    // Stub: select product and move to review
-                                    viewModel.currentStep = .review
+                    VStack(alignment: .leading, spacing: 16) {
+                        if viewModel.isSearching {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                Text("Searching products...")
+                                    .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                                    .foregroundStyle(Color.App.darkBlue)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 24)
+                        }
+
+                        if let searchErrorMessage = viewModel.searchErrorMessage {
+                            Text(searchErrorMessage)
+                                .font(Font.App.nunitoRounded(size: 13, weight: .medium))
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        if !viewModel.searchResults.isEmpty {
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                ForEach(viewModel.searchResults) { product in
+                                    Button {
+                                        Task { await viewModel.selectProduct(product) }
+                                    } label: {
+                                        ProductGridItemView(
+                                            productName: product.name,
+                                            imageURL: product.imageURL,
+                                            badgeText: product.highlights.first
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(viewModel.isLoadingResult)
                                 }
+                            }
+                        } else if !viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !viewModel.isSearching {
+                            Text("No products found.")
+                                .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                                .foregroundStyle(Color.App.darkBlue)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.top, 24)
+                        } else {
+                            Text("Browse products below or type to search.")
+                                .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                                .foregroundStyle(Color.App.darkBlue.opacity(0.75))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.top, 24)
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
                 }
             }
+        }
+        .overlay {
+            if viewModel.isLoadingResult {
+                ZStack {
+                    Color.black.opacity(0.15)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading product details...")
+                            .font(Font.App.nunitoRounded(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.App.darkBlue)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white)
+                    )
+                }
+            }
+        }
+        .task(id: viewModel.searchText) {
+            let query = viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard !query.isEmpty else {
+                await viewModel.searchProducts()
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            await viewModel.searchProducts()
+        }
+        .task {
+            await viewModel.loadBrowseProducts()
         }
     }
 }
