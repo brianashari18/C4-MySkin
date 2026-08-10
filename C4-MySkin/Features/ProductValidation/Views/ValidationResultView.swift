@@ -139,15 +139,33 @@ struct ValidationResultView: View {
             if let image = viewModel.firstSelectedImage {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity)
                     .frame(height: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+            } else if let imageURL = result.imageURL, let url = URL(string: imageURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure, .empty:
+                        placeholderImage
+                    @unknown default:
+                        placeholderImage
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 160)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
             } else {
-                Image(systemName: "photo")
-                    .font(.system(size: 40, weight: .light))
-                    .foregroundStyle(Color.App.mediumBlue.opacity(0.5))
+                placeholderImage
             }
         }
+        .frame(maxWidth: .infinity)
+        .frame(height: 160)
+        .clipped()
     }
 
     // MARK: - Comparison: Two Product Cards
@@ -174,26 +192,31 @@ struct ValidationResultView: View {
                     if let image {
                         Image(uiImage: image)
                             .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                    } else {
-                        // Placeholder product shape
-                        VStack(spacing: 0) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.App.mediumBlue.opacity(0.3))
-                                .frame(width: 50, height: 20)
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.white.opacity(0.9))
-                                .frame(width: 70, height: 52)
-                                .offset(y: -3)
+                            .scaledToFill()
+                    } else if let imageURL = comparisonImageURL(for: name), let url = URL(string: imageURL) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case let .success(image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            case .failure, .empty:
+                                comparisonPlaceholder
+                            @unknown default:
+                                comparisonPlaceholder
+                            }
                         }
+                    } else {
+                        comparisonPlaceholder
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .frame(height: 120)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.App.sunnyYellow, lineWidth: 2)
                 )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 // Heart icon
                 Image(systemName: "heart")
@@ -209,6 +232,36 @@ struct ValidationResultView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var placeholderImage: some View {
+        Image(systemName: "photo")
+            .font(.system(size: 40, weight: .light))
+            .foregroundStyle(Color.App.mediumBlue.opacity(0.5))
+    }
+
+    private var comparisonPlaceholder: some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.App.mediumBlue.opacity(0.3))
+                .frame(width: 50, height: 20)
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.9))
+                .frame(width: 70, height: 52)
+                .offset(y: -3)
+        }
+    }
+
+    private func comparisonImageURL(for name: String) -> String? {
+        if result.productName == name {
+            return result.imageURL
+        }
+
+        if viewModel.secondValidationResult?.productName == name {
+            return viewModel.secondValidationResult?.imageURL
+        }
+
+        return nil
     }
 
     // MARK: - Comparison Data Card (two columns)
