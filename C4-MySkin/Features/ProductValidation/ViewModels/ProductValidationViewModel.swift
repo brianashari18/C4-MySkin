@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import PhotosUI
 import Combine
 
 @MainActor
@@ -16,76 +15,118 @@ final class ProductValidationViewModel: ObservableObject {
     @Published var currentStep: ValidationStep = .imagePicker
 
     // MARK: - Image State
+    /// Image currently being reviewed (used by PhotoReviewView)
     @Published var selectedImage: UIImage? = nil
-    @Published var photoPickerItem: PhotosPickerItem? = nil {
-        didSet { Task { await loadPickedPhoto() } }
-    }
+    /// Locked-in image for product 1 (set when first validation completes)
+    @Published var firstSelectedImage: UIImage? = nil
+    /// Locked-in image for product 2 (set when second validation completes)
+    @Published var secondSelectedImage: UIImage? = nil
+
+    // MARK: - Camera Service
+    let cameraService = CameraService()
+    private var cameraCancellable: AnyCancellable?
 
     // MARK: - Validation State
+    /// Result for product 1
     @Published var validationResult: ValidationResult? = nil
+    /// Result for product 2 — non-nil triggers comparison layout
+    @Published var secondValidationResult: ValidationResult? = nil
     @Published var isLoading: Bool = false
 
     // MARK: - Search State
     @Published var searchText: String = ""
 
-    // MARK: - Actions
+    // MARK: - Computed
+    var isComparisonMode: Bool { secondValidationResult != nil }
 
-    /// Called when the user picks "Camera" — moves to camera scanner screen
-    func openCamera() {
-        currentStep = .camera
+    // MARK: - Init
+
+    init() {
+        // When the camera captures a photo, store it and navigate to review
+        cameraCancellable = cameraService.$capturedImage
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .sink { [weak self] image in
+                guard let self else { return }
+                self.selectedImage = image
+                self.currentStep = .review
+            }
     }
 
-    /// Called when the user picks "Other…" — moves to search/picker screen
-    func openOther() {
-        currentStep = .search
+    // MARK: - Navigation Actions
+
+    /// "Camera" tapped → CameraScannerView
+    func openCamera() { currentStep = .camera }
+
+    /// "Other…" tapped → ProductSearchView
+    func openOther() { currentStep = .search }
+
+    // MARK: - Camera Actions
+
+    func startCamera() {
+        Task { await cameraService.checkAuthorizationAndSetup() }
+        cameraService.startSession()
     }
 
-    /// Called after a photo is confirmed from search / photo library
+    func stopCamera() {
+        cameraService.stopSession()
+    }
+
+    func capturePhoto() {
+        cameraService.capturePhoto()
+        // Navigation happens automatically via the cameraCancellable sink
+    }
+
+    // MARK: - Image Confirmed from Search Screen
+
     func confirmImage(_ image: UIImage) {
         selectedImage = image
         currentStep = .review
     }
 
-    /// Called after capture button is tapped on camera screen
-    func capturePhoto() {
-        // Stub: in real implementation this triggers AVCaptureSession
-        // For now, transition to review with a placeholder
-        currentStep = .review
-    }
-
-    /// Called when "Validate" is tapped on the review screen
+    // MARK: - Validate
+    /// First call  → stores product 1 image + result, navigates to result screen.
+    /// Second call → stores product 2 image + result, switches to comparison layout.
     func validate() {
         isLoading = true
-        // Stub: simulate async API call
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.validationResult = ValidationResult.stub
-            self?.isLoading = false
-            self?.currentStep = .result
+            guard let self else { return }
+            self.isLoading = false
+
+            if self.validationResult == nil {
+                // — First product —
+                self.firstSelectedImage = self.selectedImage
+                self.validationResult = ValidationResult.stub
+            } else {
+                // — Second product —
+                self.secondSelectedImage = self.selectedImage
+                self.secondValidationResult = ValidationResult.stub2
+            }
+
+            self.currentStep = .result
         }
     }
 
-    /// Called when "Retake" is tapped — returns to image picker
+    // MARK: - Retake (returns to camera)
     func retake() {
         selectedImage = nil
-        validationResult = nil
-        currentStep = .imagePicker
+        cameraService.capturedImage = nil
+        currentStep = .camera
     }
 
-    /// Called when "Finish" is tapped on the result screen
-    func finish() {
+    // MARK: - Full Reset (back to start)
+    func reset() {
         selectedImage = nil
+        firstSelectedImage = nil
+        secondSelectedImage = nil
         validationResult = nil
+        secondValidationResult = nil
+        cameraService.capturedImage = nil
         currentStep = .imagePicker
     }
 
-    // MARK: - Private
-
-    private func loadPickedPhoto() async {
-        guard let item = photoPickerItem else { return }
-        if let data = try? await item.loadTransferable(type: Data.self),
-           let image = UIImage(data: data) {
-            selectedImage = image
-            currentStep = .review
-        }
+    // MARK: - Finish
+    func finish() {
+        reset()
     }
 }

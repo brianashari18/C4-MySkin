@@ -6,15 +6,13 @@
 //
 
 import SwiftUI
-import PhotosUI
 
 /// Screen 4 — Validation Result
-/// Scrollable result screen with Insight card, Ingredient card, Suited-Ingredients card,
-/// and a "+" menu in the nav bar to add another product image.
+/// Shows single product result OR a side-by-side comparison when
+/// a second product has been scanned via the "+" button.
 struct ValidationResultView: View {
 
     @ObservedObject var viewModel: ProductValidationViewModel
-
     @State private var showAddMenu: Bool = false
 
     private let result: ValidationResult
@@ -26,15 +24,12 @@ struct ValidationResultView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            Color.App.backgroundGray
-                .ignoresSafeArea()
+            Color.App.backgroundGray.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // MARK: - Navigation Bar
                 HStack {
-                    Button {
-                        viewModel.retake()
-                    } label: {
+                    Button { viewModel.reset() } label: {
                         Image(systemName: "chevron.left")
                             .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
                             .foregroundStyle(Color.App.textDark)
@@ -44,16 +39,19 @@ struct ValidationResultView: View {
 
                     Spacer()
 
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showAddMenu.toggle()
+                    // Show "+" only when not yet in comparison mode
+                    if !viewModel.isComparisonMode {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showAddMenu.toggle()
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
+                                .foregroundStyle(Color.App.textDark)
+                                .padding(10)
+                                .background(Circle().fill(Color.white.opacity(0.85)))
                         }
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
-                            .foregroundStyle(Color.App.textDark)
-                            .padding(10)
-                            .background(Circle().fill(Color.white.opacity(0.85)))
                     }
                 }
                 .padding(.horizontal, 20)
@@ -63,48 +61,27 @@ struct ValidationResultView: View {
                 // MARK: - Scrollable Content
                 ScrollView {
                     VStack(spacing: 20) {
-
-                        // Product image placeholder
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.App.lightBlue.opacity(0.25))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.App.lightBlue.opacity(0.5), lineWidth: 1.5)
-                                )
-                                .frame(height: 160)
-
-                            if let image = viewModel.selectedImage {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                                    .frame(height: 160)
-                            } else {
-                                Image(systemName: "photo")
-                                    .font(.system(size: 40, weight: .light))
-                                    .foregroundStyle(Color.App.mediumBlue.opacity(0.5))
-                            }
+                        if viewModel.isComparisonMode, let secondResult = viewModel.secondValidationResult {
+                            // ── Comparison layout ──
+                            comparisonProductCards
+                            comparisonDataCard(
+                                title: "Insight",
+                                items1: result.insightItems,
+                                items2: secondResult.insightItems
+                            )
+                            comparisonDataCard(
+                                title: "Ingredient",
+                                items1: result.ingredients,
+                                items2: secondResult.ingredients
+                            )
+                            suitedCard(result: result)
+                        } else {
+                            // ── Single product layout ──
+                            singleProductImage
+                            ValidationCardView(title: "Insight", items: result.insightItems)
+                            ValidationCardView(title: "Ingredient", items: result.ingredients)
+                            suitedCard(result: result)
                         }
-
-                        // Insight card
-                        ValidationCardView(
-                            title: "Insight",
-                            items: [
-                                "Price: \(result.price)",
-                                "Brand: \(result.brand)",
-                                "Review: \(result.review)"
-                            ]
-                        )
-
-                        // Ingredient card
-                        ValidationCardView(
-                            title: "Ingredient",
-                            items: result.ingredients
-                        )
-
-                        // Suited Ingredients card — blurred if no profile
-                        suitedCard
 
                         Spacer().frame(height: 90) // room for Finish button
                     }
@@ -113,9 +90,7 @@ struct ValidationResultView: View {
                 }
 
                 // MARK: - Finish Button (pinned)
-                Button {
-                    viewModel.finish()
-                } label: {
+                Button { viewModel.finish() } label: {
                     Text("Finish")
                         .font(Font.App.nunitoRounded(size: 18, weight: .bold))
                         .foregroundStyle(.white)
@@ -141,17 +116,176 @@ struct ValidationResultView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showAddMenu)
+        .animation(.easeInOut(duration: 0.3), value: viewModel.isComparisonMode)
         .contentShape(Rectangle())
         .onTapGesture {
             if showAddMenu { withAnimation { showAddMenu = false } }
         }
     }
 
-    // MARK: - Suited-Ingredients Card
+    // MARK: - Single Product Image
+
     @ViewBuilder
-    private var suitedCard: some View {
+    private var singleProductImage: some View {
         ZStack {
-            // Yellow background card
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.App.lightBlue.opacity(0.25))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.App.lightBlue.opacity(0.5), lineWidth: 1.5)
+                )
+                .frame(height: 160)
+
+            if let image = viewModel.firstSelectedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .frame(height: 160)
+            } else {
+                Image(systemName: "photo")
+                    .font(.system(size: 40, weight: .light))
+                    .foregroundStyle(Color.App.mediumBlue.opacity(0.5))
+            }
+        }
+    }
+
+    // MARK: - Comparison: Two Product Cards
+
+    @ViewBuilder
+    private var comparisonProductCards: some View {
+        HStack(spacing: 12) {
+            productCard(image: viewModel.firstSelectedImage, name: result.productName)
+            if let second = viewModel.secondValidationResult {
+                productCard(image: viewModel.secondSelectedImage, name: second.productName)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func productCard(image: UIImage?, name: String) -> some View {
+        VStack(spacing: 8) {
+            ZStack(alignment: .topTrailing) {
+                // Image area
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.App.lightBlue.opacity(0.15))
+
+                    if let image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(8)
+                    } else {
+                        // Placeholder product shape
+                        VStack(spacing: 0) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.App.mediumBlue.opacity(0.3))
+                                .frame(width: 50, height: 20)
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.white.opacity(0.9))
+                                .frame(width: 70, height: 52)
+                                .offset(y: -3)
+                        }
+                    }
+                }
+                .frame(height: 120)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.App.sunnyYellow, lineWidth: 2)
+                )
+
+                // Heart icon
+                Image(systemName: "heart")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
+                    .padding(6)
+            }
+
+            Text(name)
+                .font(Font.App.nunitoRounded(size: 12, weight: .semibold))
+                .foregroundStyle(Color.App.darkBlue)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Comparison Data Card (two columns)
+
+    @ViewBuilder
+    private func comparisonDataCard(title: String, items1: [String], items2: [String]) -> some View {
+        ZStack(alignment: .top) {
+            // White card body
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.App.sunnyYellow.opacity(0.55), lineWidth: 1.5)
+                )
+                .shadow(color: Color.App.mediumBlue.opacity(0.07), radius: 8, x: 0, y: 3)
+
+            HStack(alignment: .top, spacing: 0) {
+                // Left column — product 1
+                VStack(alignment: .leading, spacing: 8) {
+                    Spacer().frame(height: 20)
+                    ForEach(items1, id: \.self) { item in
+                        comparisonRow(item: item)
+                    }
+                    Spacer().frame(height: 4)
+                }
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Vertical divider
+                Rectangle()
+                    .fill(Color.App.sunnyYellow.opacity(0.6))
+                    .frame(width: 1.5)
+                    .padding(.vertical, 30)
+
+                // Right column — product 2
+                VStack(alignment: .leading, spacing: 8) {
+                    Spacer().frame(height: 20)
+                    ForEach(items2, id: \.self) { item in
+                        comparisonRow(item: item)
+                    }
+                    Spacer().frame(height: 4)
+                }
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.bottom, 12)
+
+            // Yellow pill header
+            Text(title)
+                .font(Font.App.nunitoRounded(size: 15, weight: .bold))
+                .foregroundStyle(Color.App.darkBlue)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(Color.App.sunnyYellow))
+                .offset(y: -18)
+        }
+        .padding(.top, 18)
+    }
+
+    @ViewBuilder
+    private func comparisonRow(item: String) -> some View {
+        HStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.App.lightBlue.opacity(0.5))
+                .frame(width: 12, height: 12)
+            Text(item)
+                .font(Font.App.nunitoRounded(size: 12, weight: .regular))
+                .foregroundStyle(Color.App.darkBlue)
+                .lineLimit(2)
+        }
+    }
+
+    // MARK: - Suited-Ingredients Card
+
+    @ViewBuilder
+    private func suitedCard(result: ValidationResult) -> some View {
+        ZStack {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.App.sunnyYellow.opacity(0.2))
                 .overlay(
@@ -167,10 +301,8 @@ struct ValidationResultView: View {
 
                 ForEach(result.suitedIngredients, id: \.self) { item in
                     HStack(spacing: 6) {
-                        Text("–")
-                            .foregroundStyle(Color.App.darkBlue)
-                        Text(item)
-                            .foregroundStyle(Color.App.darkBlue)
+                        Text("–").foregroundStyle(Color.App.darkBlue)
+                        Text(item).foregroundStyle(Color.App.darkBlue)
                     }
                     .font(Font.App.nunitoRounded(size: 15))
                 }
@@ -190,16 +322,15 @@ struct ValidationResultView: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 7)
-                            .background(
-                                Capsule().fill(Color.App.mediumBlue)
-                            )
+                            .background(Capsule().fill(Color.App.mediumBlue))
                     )
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    // MARK: - Add (+) Popup Menu
+    // MARK: - "+" Add Popup Menu
+
     @ViewBuilder
     private var addPopupMenu: some View {
         VStack(spacing: 0) {
@@ -208,10 +339,8 @@ struct ValidationResultView: View {
                 viewModel.openCamera()
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "camera")
-                        .font(.system(size: 15))
-                    Text("Camera")
-                        .font(Font.App.nunitoRounded(size: 16, weight: .medium))
+                    Image(systemName: "camera").font(.system(size: 15))
+                    Text("Camera").font(Font.App.nunitoRounded(size: 16, weight: .medium))
                 }
                 .foregroundStyle(Color.App.textDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -221,23 +350,18 @@ struct ValidationResultView: View {
 
             Divider()
 
-            PhotosPicker(
-                selection: $viewModel.photoPickerItem,
-                matching: .images
-            ) {
+            Button {
+                showAddMenu = false
+                viewModel.openOther()
+            } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 15))
-                    Text("Other...")
-                        .font(Font.App.nunitoRounded(size: 16, weight: .medium))
+                    Image(systemName: "magnifyingglass").font(.system(size: 15))
+                    Text("Other...").font(Font.App.nunitoRounded(size: 16, weight: .medium))
                 }
                 .foregroundStyle(Color.App.textDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-            }
-            .onChange(of: viewModel.photoPickerItem) { _, _ in
-                showAddMenu = false
             }
         }
         .frame(width: 190)
@@ -251,7 +375,13 @@ struct ValidationResultView: View {
 }
 
 // MARK: - Preview
-#Preview {
+#Preview("Single") {
     let vm = ProductValidationViewModel()
     ValidationResultView(viewModel: vm, result: ValidationResult.stub)
+}
+
+#Preview("Comparison") {
+    let vm = ProductValidationViewModel()
+    vm.secondValidationResult = ValidationResult.stub2
+    return ValidationResultView(viewModel: vm, result: ValidationResult.stub)
 }
