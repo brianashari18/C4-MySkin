@@ -6,10 +6,10 @@
 //
 
 import SwiftUI
-import PhotosUI
 
 /// Screen 1 — Image Picker
-/// Shows a large camera placeholder card with a popup menu for "Camera" or "Other…"
+/// Entry point for the validation flow.
+/// Popup menu: "Camera" → CameraScannerView | "Other…" → ProductSearchView
 struct ImagePickerView: View {
 
     @ObservedObject var viewModel: ProductValidationViewModel
@@ -28,7 +28,7 @@ struct ImagePickerView: View {
                     // MARK: - Navigation Bar
                     HStack {
                         Button {
-                            // Back action handled by parent
+                            // Back action handled by parent / root coordinator
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
@@ -52,15 +52,13 @@ struct ImagePickerView: View {
                                     .stroke(Color.App.lightBlue.opacity(0.5), lineWidth: 1.5)
                             )
 
-                        if viewModel.selectedImage == nil {
-                            VStack(spacing: 12) {
-                                Image(systemName: "camera")
-                                    .font(.system(size: 52, weight: .light))
-                                    .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
-                                Text("Tap to add a product")
-                                    .font(Font.App.nunitoRounded(size: 14, weight: .medium))
-                                    .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
-                            }
+                        VStack(spacing: 12) {
+                            Image(systemName: "camera")
+                                .font(.system(size: 52, weight: .light))
+                                .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
+                            Text("Tap to add a product")
+                                .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                                .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -117,11 +115,11 @@ struct ImagePickerView: View {
 
             Divider()
 
-            // PhotosPicker — "Other…"
-            PhotosPicker(
-                selection: $viewModel.photoPickerItem,
-                matching: .images
-            ) {
+            // Other… → navigates to ProductSearchView
+            Button {
+                showMenu = false
+                viewModel.openOther()
+            } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15))
@@ -133,14 +131,11 @@ struct ImagePickerView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
             }
-            .onChange(of: viewModel.photoPickerItem) { _, _ in
-                showMenu = false
-            }
         }
         .frame(width: 180)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white.opacity(0.95))
+                .fill(Color.white.opacity(0.97))
                 .shadow(color: Color.App.darkBlue.opacity(0.15), radius: 12, x: 0, y: 4)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))

@@ -8,8 +8,7 @@
 import SwiftUI
 
 /// Screen 2 — Camera Scanner
-/// Grey placeholder preview area with scan-frame overlay + blue capture button.
-/// Camera integration (AVCaptureSession) is wired in a future sprint.
+/// Live AVCaptureSession preview with scan-frame overlay and a capture button.
 struct CameraScannerView: View {
 
     @ObservedObject var viewModel: ProductValidationViewModel
@@ -19,40 +18,57 @@ struct CameraScannerView: View {
 
     var body: some View {
         ZStack {
-            // Background
-            Color.App.backgroundGray
-                .ignoresSafeArea()
+            // Background (visible only before session starts)
+            Color.black.ignoresSafeArea()
 
             GeometryReader { geometry in
                 VStack(spacing: 0) {
-                    // MARK: - Navigation Bar
+
+                    // MARK: - Navigation Bar (overlaid on top of preview)
                     HStack {
                         Button {
+                            viewModel.stopCamera()
                             viewModel.currentStep = .imagePicker
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
-                                .foregroundStyle(Color.App.textDark)
+                                .foregroundStyle(.white)
                                 .padding(10)
-                                .background(Circle().fill(Color.white.opacity(0.85)))
+                                .background(Circle().fill(Color.black.opacity(0.35)))
                         }
                         Spacer()
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
                     .padding(.bottom, 12)
+                    .zIndex(1)
 
                     // MARK: - Camera Preview Area
                     ZStack {
-                        // Placeholder for AVCaptureSession preview
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(Color.App.lightBlue.opacity(0.25))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 24)
-                                    .stroke(Color.App.lightBlue.opacity(0.5), lineWidth: 1.5)
-                            )
+                        if viewModel.cameraService.isAuthorized {
+                            // Live camera feed
+                            CameraPreviewView(session: viewModel.cameraService.session)
+                                .clipShape(RoundedRectangle(cornerRadius: 24))
+                        } else {
+                            // No permission placeholder
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(Color.App.lightBlue.opacity(0.15))
+                                .overlay(
+                                    VStack(spacing: 12) {
+                                        Image(systemName: "camera.slash")
+                                            .font(.system(size: 44))
+                                            .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
+                                        Text(viewModel.cameraService.error?.errorDescription
+                                             ?? "Requesting camera access…")
+                                            .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                                            .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal, 24)
+                                    }
+                                )
+                        }
 
-                        // Scan frame overlay centered on the preview
+                        // Scan frame always on top
                         ScanFrameOverlay()
                     }
                     .frame(maxWidth: .infinity)
@@ -63,29 +79,43 @@ struct CameraScannerView: View {
 
                     // MARK: - Capture Button
                     Button {
+                        guard viewModel.cameraService.isAuthorized else { return }
                         withAnimation(.easeInOut(duration: 0.1)) {
                             isCaptureTapped = true
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                             isCaptureTapped = false
                             viewModel.capturePhoto()
                         }
                     } label: {
                         ZStack {
+                            // Outer ring
+                            Circle()
+                                .stroke(Color.white.opacity(0.6), lineWidth: 3)
+                                .frame(width: 80, height: 80)
+                            // Inner filled circle
                             Circle()
                                 .fill(Color.App.mediumBlue)
-                                .frame(width: 72, height: 72)
-                                .shadow(color: Color.App.mediumBlue.opacity(0.45), radius: 14, x: 0, y: 6)
+                                .frame(width: 64, height: 64)
+                                .shadow(color: Color.App.mediumBlue.opacity(0.5), radius: 14, x: 0, y: 6)
 
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 28, weight: .medium))
+                                .font(.system(size: 26, weight: .medium))
                                 .foregroundStyle(.white)
                         }
                         .scaleEffect(isCaptureTapped ? 0.88 : 1.0)
+                        .animation(.easeInOut(duration: 0.12), value: isCaptureTapped)
                     }
                     .padding(.bottom, 44)
                 }
             }
+        }
+        // MARK: - Lifecycle
+        .onAppear {
+            viewModel.startCamera()
+        }
+        .onDisappear {
+            viewModel.stopCamera()
         }
     }
 }

@@ -26,7 +26,12 @@ struct ValidationResult {
     let suitedIngredients: [String]
     let isSuited: Bool
 
-    // MARK: - Preview / Stub
+    /// Convenience array used by comparison cards for the Insight section
+    var insightItems: [String] {
+        ["Price: \(price)", "Brand: \(brand)", "Review: \(review)"]
+    }
+
+    // MARK: - Stubs
     static let stub = ValidationResult(
         productName: "Product Name",
         brand: "Brand Name",
@@ -34,6 +39,16 @@ struct ValidationResult {
         review: "4.5 / 5",
         ingredients: ["Niacinamide", "Hyaluronic Acid", "Glycerin"],
         suitedIngredients: ["Niacinamide", "Centella Asiatica", "Ceramide"],
+        isSuited: false
+    )
+
+    static let stub2 = ValidationResult(
+        productName: "Product 2",
+        brand: "Another Brand",
+        price: "Rp 85.000",
+        review: "4.2 / 5",
+        ingredients: ["Salicylic Acid", "Zinc", "Aloe Vera"],
+        suitedIngredients: ["Salicylic Acid", "Tea Tree Oil", "Niacinamide"],
         isSuited: false
     )
 }
