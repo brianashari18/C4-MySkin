@@ -10,5 +10,8 @@ DerivedData/
 *.xcuserstate
 *.xcscmblueprint
 
+# Node
+node_modules/
+
 # Build products
 build/
