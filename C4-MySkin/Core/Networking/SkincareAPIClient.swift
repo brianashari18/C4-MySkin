@@ -30,10 +30,25 @@ struct SkincareAPIClient {
         )
     }
 
-    func getProductDossier(slug: String, enrich: Bool = true) async throws -> ProductDossierResponse {
-        try await request(
+    func getProductDossier(
+        slug: String,
+        enrich: Bool = true,
+        skinType: String? = nil,
+        skinSensitivity: String? = nil,
+        concernAcnePore: String? = nil,
+        concernSkinTone: String? = nil,
+        concernSunDamage: String? = nil
+    ) async throws -> ProductDossierResponse {
+        var queryItems = [URLQueryItem(name: "enrich", value: String(enrich))]
+        if let skinType { queryItems.append(URLQueryItem(name: "skin_type", value: skinType)) }
+        if let skinSensitivity { queryItems.append(URLQueryItem(name: "skin_sensitivity", value: skinSensitivity)) }
+        if let concernAcnePore { queryItems.append(URLQueryItem(name: "concern_acne_pore", value: concernAcnePore)) }
+        if let concernSkinTone { queryItems.append(URLQueryItem(name: "concern_skin_tone", value: concernSkinTone)) }
+        if let concernSunDamage { queryItems.append(URLQueryItem(name: "concern_sun_damage", value: concernSunDamage)) }
+
+        return try await request(
             path: "/api/products/\(slug)",
-            queryItems: [URLQueryItem(name: "enrich", value: String(enrich))]
+            queryItems: queryItems
         )
     }
 

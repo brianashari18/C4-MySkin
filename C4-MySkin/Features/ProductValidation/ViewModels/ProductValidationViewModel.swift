@@ -28,12 +28,21 @@ final class ProductValidationViewModel: ObservableObject {
     let cameraService = CameraService()
     private var cameraCancellable: AnyCancellable?
 
+    enum ProductSource {
+        case camera
+        case search
+    }
+
     // MARK: - Validation State
     /// Result for product 1
     @Published var validationResult: ValidationResult? = nil
     /// Result for product 2 — non-nil triggers comparison layout
     @Published var secondValidationResult: ValidationResult? = nil
     @Published var isLoading: Bool = false
+    @Published var showProductNotFoundModal: Bool = false
+
+    @Published var firstProductSource: ProductSource = .camera
+    @Published var secondProductSource: ProductSource = .camera
 
     // MARK: - Search State
     @Published var searchText: String = ""
@@ -43,7 +52,15 @@ final class ProductValidationViewModel: ObservableObject {
     // MARK: - Request State
     @Published var isSearching: Bool = false
     @Published var isLoadingResult: Bool = false
+    @Published var loadingProductID: String? = nil
     @Published var hasLoadedBrowseProducts: Bool = false
+
+    // MARK: - Ingredient Detail Sheet State
+    @Published var selectedIngredientName: String? = nil
+    @Published var selectedIngredientDetail: IngredientDetailResponse? = nil
+    @Published var isLoadingIngredientDetail: Bool = false
+    @Published var ingredientDetailError: String? = nil
+    @Published var showIngredientSheet: Bool = false
 
     // MARK: - Computed
     var isComparisonMode: Bool { secondValidationResult != nil }
@@ -74,8 +91,11 @@ final class ProductValidationViewModel: ObservableObject {
     // MARK: - Camera Actions
 
     func startCamera() {
-        Task { await cameraService.checkAuthorizationAndSetup() }
-        cameraService.startSession()
+        Task {
+            // Wait for auth + session config to complete BEFORE starting the feed
+            await cameraService.checkAuthorizationAndSetup()
+            cameraService.startSession()
+        }
     }
 
     func stopCamera() {
@@ -104,9 +124,11 @@ final class ProductValidationViewModel: ObservableObject {
             self.isLoading = false
 
             if self.validationResult == nil {
+                self.firstProductSource = .camera
                 self.firstSelectedImage = self.selectedImage
                 self.validationResult = ValidationResult.stub
             } else {
+                self.secondProductSource = .camera
                 self.secondSelectedImage = self.selectedImage
                 self.secondValidationResult = ValidationResult.stub2
             }
@@ -143,14 +165,24 @@ final class ProductValidationViewModel: ObservableObject {
         searchErrorMessage = nil
 
         do {
-            var groupedResults: [ProductSearchItem] = []
-            for query in browseQueries {
-                let products = try await fetchProducts(for: query)
-                groupedResults.append(contentsOf: products)
+            let queries = browseQueries
+            let allProducts = try await withThrowingTaskGroup(of: [ProductSearchItem].self) { group in
+                for query in queries {
+                    group.addTask { [weak self] in
+                        guard let self else { return [] }
+                        return (try? await self.fetchProducts(for: query)) ?? []
+                    }
+                }
+
+                var results: [ProductSearchItem] = []
+                for try await items in group {
+                    results.append(contentsOf: items)
+                }
+                return results
             }
 
             var seenIDs = Set<String>()
-            searchResults = groupedResults.filter { product in
+            searchResults = allProducts.filter { product in
                 seenIDs.insert(product.id).inserted
             }
             hasLoadedBrowseProducts = true
@@ -171,7 +203,8 @@ final class ProductValidationViewModel: ObservableObject {
         try await withThrowingTaskGroup(of: ProductSearchItem.self) { group in
             for product in products {
                 group.addTask { [apiClient] in
-                    guard product.imageURL == nil || product.highlights.isEmpty else {
+                    // If search API already provided image_url, return immediately (fast cache path)
+                    guard product.imageURL == nil else {
                         return product
                     }
 
@@ -179,14 +212,18 @@ final class ProductValidationViewModel: ObservableObject {
                         return product
                     }
 
-                    let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
-
-                    return ProductSearchItem(
-                        name: product.name,
-                        url: product.url,
-                        imageURL: dossier.product.imageURL,
-                        highlights: dossier.product.highlights
-                    )
+                    do {
+                        let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+                        return ProductSearchItem(
+                            name: product.name,
+                            brand: product.brand ?? dossier.product.brand,
+                            url: product.url,
+                            imageURL: dossier.product.imageURL,
+                            highlights: dossier.product.highlights
+                        )
+                    } catch {
+                        return product
+                    }
                 }
             }
 
@@ -209,6 +246,7 @@ final class ProductValidationViewModel: ObservableObject {
             return
         }
 
+        loadingProductID = product.id
         isLoadingResult = true
         searchErrorMessage = nil
 
@@ -217,8 +255,10 @@ final class ProductValidationViewModel: ObservableObject {
             let result = ValidationResult(dossier: dossier)
 
             if validationResult == nil {
+                firstProductSource = .search
                 validationResult = result
             } else {
+                secondProductSource = .search
                 secondValidationResult = result
             }
 
@@ -228,17 +268,53 @@ final class ProductValidationViewModel: ObservableObject {
         }
 
         isLoadingResult = false
+        loadingProductID = nil
     }
 
     func leaveSearch() {
         currentStep = validationResult == nil ? .imagePicker : .result
     }
 
+    // MARK: - Back Navigation from Result Screen
+
+    func goBackFromResult() {
+        if isComparisonMode {
+            let source = secondProductSource
+            secondValidationResult = nil
+            secondSelectedImage = nil
+            if source == .search {
+                currentStep = .search
+            } else {
+                currentStep = .result
+            }
+        } else {
+            let source = firstProductSource
+            validationResult = nil
+            firstSelectedImage = nil
+            selectedImage = nil
+            if source == .search {
+                currentStep = .search
+            } else {
+                currentStep = .imagePicker
+            }
+        }
+    }
+
     // MARK: - Retake (returns to camera)
     func retake() {
         selectedImage = nil
         cameraService.capturedImage = nil
+        showProductNotFoundModal = false
         currentStep = .camera
+    }
+
+    // MARK: - Scan Another Product (resets scanner from Product Not Found modal)
+    func scanAnotherProduct() {
+        showProductNotFoundModal = false
+        selectedImage = nil
+        cameraService.capturedImage = nil
+        currentStep = .camera
+        startCamera()
     }
 
     // MARK: - Full Reset (back to start)
@@ -248,6 +324,8 @@ final class ProductValidationViewModel: ObservableObject {
         secondSelectedImage = nil
         validationResult = nil
         secondValidationResult = nil
+        firstProductSource = .camera
+        secondProductSource = .camera
         searchText = ""
         searchResults = []
         searchErrorMessage = nil
@@ -261,5 +339,35 @@ final class ProductValidationViewModel: ObservableObject {
     // MARK: - Finish
     func finish() {
         reset()
+    }
+
+    // MARK: - Ingredient Inspection
+    func inspectIngredient(name: String) {
+        selectedIngredientName = name
+        showIngredientSheet = true
+        Task {
+            await fetchIngredientDetail(name: name)
+        }
+    }
+
+    private func fetchIngredientDetail(name: String) async {
+        isLoadingIngredientDetail = true
+        ingredientDetailError = nil
+        selectedIngredientDetail = nil
+
+        do {
+            let searchRes = try await apiClient.searchIngredients(query: name)
+            if let firstMatch = searchRes.results.first {
+                let detail = try await apiClient.getIngredient(slug: firstMatch.slug)
+                selectedIngredientDetail = detail
+            } else {
+                let slug = name.lowercased().replacingOccurrences(of: " ", with: "-")
+                let detail = try await apiClient.getIngredient(slug: slug)
+                selectedIngredientDetail = detail
+            }
+        } catch {
+            ingredientDetailError = "Informasi mendalam untuk '\(name)' belum tersedia dari database."
+        }
+        isLoadingIngredientDetail = false
     }
 }

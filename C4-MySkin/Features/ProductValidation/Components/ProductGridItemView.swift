@@ -16,6 +16,8 @@ struct ProductGridItemView: View {
     var imageURL: String? = nil
     var badgeText: String? = nil
 
+    var isLoading: Bool = false
+
     var body: some View {
         VStack(alignment: .center, spacing: 10) {
             // Product image / placeholder
@@ -27,19 +29,11 @@ struct ProductGridItemView: View {
                             .scaledToFit()
                             .padding(10)
                     } else if let imageURL, let url = URL(string: imageURL) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case let .success(image):
-                                image
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(10)
-                            case .failure, .empty:
-                                placeholderView
-                            @unknown default:
-                                placeholderView
-                            }
+                        CachedAsyncImage(url: url) {
+                            placeholderView
                         }
+                        .scaledToFit()
+                        .padding(10)
                     } else {
                         placeholderView
                     }
@@ -57,13 +51,21 @@ struct ProductGridItemView: View {
                         )
                         .padding(8)
                 }
+
+                if isLoading {
+                    ZStack {
+                        Color.white.opacity(0.7)
+                        ProgressView()
+                            .tint(Color.App.mediumBlue)
+                    }
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: imageHeight)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.App.lightBlue.opacity(0.35), lineWidth: 1)
+                    .stroke(isLoading ? Color.App.mediumBlue : Color.App.lightBlue.opacity(0.35), lineWidth: isLoading ? 2 : 1)
             )
 
             // Product name

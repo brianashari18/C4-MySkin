@@ -16,6 +16,32 @@ enum ValidationStep {
     case search
 }
 
+// MARK: - Rich Structured Item Models for Wireframe Sections
+
+struct KeyIngredientItem: Identifiable, Hashable {
+    var id: String { name }
+    let name: String
+    let description: String
+}
+
+struct BenefitItem: Identifiable, Hashable {
+    var id: String { title + description }
+    let title: String
+    let description: String
+}
+
+struct ConcernItem: Identifiable, Hashable {
+    var id: String { title + description }
+    let title: String
+    let description: String
+}
+
+struct IngredientCheckItem: Identifiable, Hashable {
+    var id: String { name }
+    let name: String
+    let isPresent: Bool
+}
+
 // MARK: - Validation Result Model
 struct ValidationResult {
     let productName: String
@@ -23,9 +49,26 @@ struct ValidationResult {
     let imageURL: String?
     let price: String
     let review: String
-    let ingredients: [String]
-    let suitedIngredients: [String]
+    
+    // Insight Section
+    let brandReputation: String
+    let reviewSummary: String
+    let priceSummary: String
+    let ingredientsMatchSummary: String
+
+    // Sections
+    let ingredientChecks: [IngredientCheckItem]
+    let keyIngredientItems: [KeyIngredientItem]
+    let bestForSummary: String
+    let benefitItems: [BenefitItem]
+    let concernItems: [ConcernItem]
     let isSuited: Bool
+
+    // Legacy Fallbacks
+    let ingredients: [String]
+    let keyIngredients: [String]
+    let benefits: [String]
+    let sideEffects: [String]
 
     init(
         productName: String,
@@ -33,17 +76,39 @@ struct ValidationResult {
         imageURL: String?,
         price: String,
         review: String,
-        ingredients: [String],
-        suitedIngredients: [String],
-        isSuited: Bool
+        brandReputation: String = "",
+        reviewSummary: String = "",
+        priceSummary: String = "",
+        ingredientsMatchSummary: String = "",
+        ingredientChecks: [IngredientCheckItem] = [],
+        keyIngredientItems: [KeyIngredientItem] = [],
+        bestForSummary: String = "",
+        benefitItems: [BenefitItem] = [],
+        concernItems: [ConcernItem] = [],
+        ingredients: [String] = [],
+        keyIngredients: [String] = [],
+        benefits: [String] = [],
+        sideEffects: [String] = [],
+        isSuited: Bool = false
     ) {
         self.productName = productName
         self.brand = brand
         self.imageURL = imageURL
         self.price = price
         self.review = review
-        self.ingredients = ingredients
-        self.suitedIngredients = suitedIngredients
+        self.brandReputation = brandReputation
+        self.reviewSummary = reviewSummary
+        self.priceSummary = priceSummary
+        self.ingredientsMatchSummary = ingredientsMatchSummary
+        self.ingredientChecks = ingredientChecks
+        self.keyIngredientItems = keyIngredientItems
+        self.bestForSummary = bestForSummary
+        self.benefitItems = benefitItems
+        self.concernItems = concernItems
+        self.ingredients = ingredients.isEmpty ? ingredientChecks.map(\.name) : ingredients
+        self.keyIngredients = keyIngredients.isEmpty ? keyIngredientItems.map(\.name) : keyIngredients
+        self.benefits = benefits.isEmpty ? benefitItems.map(\.title) : benefits
+        self.sideEffects = sideEffects.isEmpty ? concernItems.map(\.title) : sideEffects
         self.isSuited = isSuited
     }
 
@@ -71,15 +136,41 @@ struct ValidationResult {
             reviewText = "No reviews"
         }
 
+        let keyIngs = dossier.product.keyIngredients.map {
+            KeyIngredientItem(
+                name: $0.name,
+                description: $0.benefits.joined(separator: ", ").capitalized.ifEmpty("Supports skin health.")
+            )
+        }
+
+        let ings = dossier.product.ingredients.map {
+            IngredientCheckItem(name: $0.name, isPresent: true)
+        }
+
+        let bItems = (dossier.product.whatItDoes.isEmpty ? dossier.product.highlights : dossier.product.whatItDoes).map {
+            BenefitItem(title: $0.capitalized, description: "Supports healthy skin texture and hydration.")
+        }
+
+        let cItems = dossier.ingredientProfiles.flatMap(\.sideEffects).map {
+            ConcernItem(title: $0.capitalized, description: "Potential mild reaction for sensitive skin types.")
+        }
+
         self.init(
             productName: dossier.product.name,
             brand: dossier.product.brand,
             imageURL: dossier.product.imageURL,
             price: priceText,
             review: reviewText,
-            ingredients: dossier.product.ingredients.map(\.name),
-            suitedIngredients: dossier.product.keyIngredients.map(\.name),
-            isSuited: !dossier.product.keyIngredients.isEmpty
+            brandReputation: "Established skincare brand known for targeted formulations.",
+            reviewSummary: "User reviews highlight effective cleansing and positive skin feel.",
+            priceSummary: "Standard price point for daily skincare routine.",
+            ingredientsMatchSummary: "Formulated with targeted active ingredients.",
+            ingredientChecks: ings,
+            keyIngredientItems: keyIngs,
+            bestForSummary: "Daily skincare use suited for routine care.",
+            benefitItems: bItems,
+            concernItems: cItems,
+            isSuited: !keyIngs.isEmpty
         )
     }
 
@@ -88,26 +179,88 @@ struct ValidationResult {
         ["Price: \(price)", "Brand: \(brand)", "Review: \(review)"]
     }
 
-    // MARK: - Stubs
+    // MARK: - Stubs matching wireframe reference
     static let stub = ValidationResult(
-        productName: "Product Name",
-        brand: "Brand Name",
+        productName: "Acno Fight Anti Pimple Face Wash",
+        brand: "Garnier",
         imageURL: nil,
-        price: "Rp 120.000",
-        review: "4.5 / 5",
-        ingredients: ["Niacinamide", "Hyaluronic Acid", "Glycerin"],
-        suitedIngredients: ["Niacinamide", "Centella Asiatica", "Ceramide"],
+        price: "Price",
+        review: "Review",
+        brandReputation: "Established skincare brand with strong recognition and a long history among acne-care users.",
+        reviewSummary: "Users often report reduced oiliness and fewer breakouts, though some mention a drying feeling after use.",
+        priceSummary: "Affordable option for users looking for an acne-focused cleanser.",
+        ingredientsMatchSummary: "Contains acne-targeting ingredients that help remove excess oil and support blemish control.",
+        ingredientChecks: [
+            IngredientCheckItem(name: "Salicylic Acid", isPresent: true),
+            IngredientCheckItem(name: "Glycerin", isPresent: true),
+            IngredientCheckItem(name: "Niacinamide", isPresent: false),
+            IngredientCheckItem(name: "Tea Tree Extract", isPresent: false),
+            IngredientCheckItem(name: "Mineral Clay", isPresent: true),
+            IngredientCheckItem(name: "Fragrance", isPresent: true),
+            IngredientCheckItem(name: "Alcohol", isPresent: false),
+            IngredientCheckItem(name: "Cocamidopropyl Betaine", isPresent: true)
+        ],
+        keyIngredientItems: [
+            KeyIngredientItem(name: "Salicylic Acid (BHA)", description: "Targets clogged pores and excess oil."),
+            KeyIngredientItem(name: "Mineral Clay", description: "Helps absorb sebum."),
+            KeyIngredientItem(name: "Glycerin", description: "Supports skin hydration.")
+        ],
+        bestForSummary: "Acne concerns needing stronger oil control.",
+        benefitItems: [
+            BenefitItem(title: "Hydrating", description: "Boosts hydration and relieves dry, tight skin."),
+            BenefitItem(title: "Barrier Repair", description: "Strengthen and restore your skin's natural barrier."),
+            BenefitItem(title: "Hydrating", description: "Boosts hydration and relieves dry, tight skin."),
+            BenefitItem(title: "Barrier Repair", description: "Strengthen and restore your skin's natural barrier.")
+        ],
+        concernItems: [
+            ConcernItem(title: "May Worsen Seborrheic Dermatitis", description: "May feed the yeast involved in seborrheic dermatitis."),
+            ConcernItem(title: "May Worsen Seborrheic Dermatitis", description: "Targets clogged pores and excess oil.")
+        ],
         isSuited: false
     )
 
     static let stub2 = ValidationResult(
-        productName: "Product 2",
-        brand: "Another Brand",
+        productName: "Oil and Acne Care Face Wash",
+        brand: "Kahf",
         imageURL: nil,
-        price: "Rp 85.000",
-        review: "4.2 / 5",
-        ingredients: ["Salicylic Acid", "Zinc", "Aloe Vera"],
-        suitedIngredients: ["Salicylic Acid", "Tea Tree Oil", "Niacinamide"],
+        price: "Price",
+        review: "Review",
+        brandReputation: "Growing local skincare brand with increasing popularity among male skincare users.",
+        reviewSummary: "Users appreciate its refreshing feel and cleansing performance, while acne improvement varies by skin condition.",
+        priceSummary: "Higher price point compared to other acne cleansers in the same category.",
+        ingredientsMatchSummary: "Focuses on oil control and cleansing, suitable for combination skin with acne concerns.",
+        ingredientChecks: [
+            IngredientCheckItem(name: "Salicylic Acid", isPresent: true),
+            IngredientCheckItem(name: "Glycerin", isPresent: true),
+            IngredientCheckItem(name: "Niacinamide", isPresent: true),
+            IngredientCheckItem(name: "Tea Tree Extract", isPresent: true),
+            IngredientCheckItem(name: "Mineral Clay", isPresent: false),
+            IngredientCheckItem(name: "Fragrance", isPresent: false),
+            IngredientCheckItem(name: "Alcohol", isPresent: true),
+            IngredientCheckItem(name: "Cocamidopropyl Betaine", isPresent: true)
+        ],
+        keyIngredientItems: [
+            KeyIngredientItem(name: "Salicylic Acid", description: "Helps control acne-causing buildup."),
+            KeyIngredientItem(name: "Tea Tree Extract", description: "Supports acne-prone skin."),
+            KeyIngredientItem(name: "Niacinamide", description: "Helps maintain skin balance.")
+        ],
+        bestForSummary: "Combination skin needing balanced cleansing.",
+        benefitItems: [
+            BenefitItem(title: "Hydrating", description: "Boosts hydration and relieves dry, tight skin."),
+            BenefitItem(title: "Barrier Repair", description: "Strengthen and restore your skin's natural barrier."),
+            BenefitItem(title: "Hydrating", description: "Boosts hydration and relieves dry, tight skin."),
+            BenefitItem(title: "Barrier Repair", description: "Strengthen and restore your skin's natural barrier.")
+        ],
+        concernItems: [
+            ConcernItem(title: "May Worsen Seborrheic Dermatitis", description: "May feed the yeast involved in seborrheic dermatitis."),
+            ConcernItem(title: "May Worsen Seborrheic Dermatitis", description: "Targets clogged pores and excess oil.")
+        ],
         isSuited: false
     )
+}
+
+private extension String {
+    func ifEmpty(_ fallback: String) -> String {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? fallback : self
+    }
 }

@@ -45,27 +45,25 @@ struct CameraScannerView: View {
 
                     // MARK: - Camera Preview Area
                     ZStack {
-                        if viewModel.cameraService.isAuthorized {
-                            // Live camera feed
-                            CameraPreviewView(session: viewModel.cameraService.session)
-                                .clipShape(RoundedRectangle(cornerRadius: 24))
-                        } else {
-                            // No permission placeholder
+                        // Always show the preview layer — it's black until
+                        // the session starts, which is standard camera UX.
+                        CameraPreviewView(session: viewModel.cameraService.session)
+                            .clipShape(RoundedRectangle(cornerRadius: 24))
+
+                        // Only overlay an error if permission was explicitly denied
+                        if viewModel.cameraService.error == .notAuthorized {
                             RoundedRectangle(cornerRadius: 24)
                                 .fill(Color.App.lightBlue.opacity(0.15))
-                                .overlay(
-                                    VStack(spacing: 12) {
-                                        Image(systemName: "camera.slash")
-                                            .font(.system(size: 44))
-                                            .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
-                                        Text(viewModel.cameraService.error?.errorDescription
-                                             ?? "Requesting camera access…")
-                                            .font(Font.App.nunitoRounded(size: 14, weight: .medium))
-                                            .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
-                                            .multilineTextAlignment(.center)
-                                            .padding(.horizontal, 24)
-                                    }
-                                )
+                            VStack(spacing: 12) {
+                                Image(systemName: "camera.slash")
+                                    .font(.system(size: 44))
+                                    .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
+                                Text("Camera access denied.\nPlease enable it in Settings.")
+                                    .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                                    .foregroundStyle(Color.App.mediumBlue.opacity(0.8))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                            }
                         }
 
                         // Scan frame always on top
@@ -109,7 +107,16 @@ struct CameraScannerView: View {
                     .padding(.bottom, 44)
                 }
             }
+
+            // MARK: - Product Not Found Modal
+            if viewModel.showProductNotFoundModal {
+                ProductNotFoundModalView {
+                    viewModel.scanAnotherProduct()
+                }
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.showProductNotFoundModal)
         // MARK: - Lifecycle
         .onAppear {
             viewModel.startCamera()
