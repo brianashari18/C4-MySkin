@@ -30,6 +30,13 @@ struct SkincareAPIClient {
         )
     }
 
+    func resolveProduct(query: String) async throws -> ProductResolveResponse {
+        try await request(
+            path: "/api/products/resolve",
+            queryItems: [URLQueryItem(name: "query", value: query)]
+        )
+    }
+
     func getProductDossier(
         slug: String,
         enrich: Bool = true,
