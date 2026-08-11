@@ -56,7 +56,7 @@ struct ImagePickerView: View {
                             Image(systemName: "camera")
                                 .font(.system(size: 52, weight: .light))
                                 .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
-                            Text("Tap to add a product")
+                            Text("Ketuk untuk menambahkan produk")
                                 .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                                 .foregroundStyle(Color.App.mediumBlue.opacity(0.7))
                         }
@@ -104,7 +104,7 @@ struct ImagePickerView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "camera")
                         .font(.system(size: 15))
-                    Text("Camera")
+                    Text("Kamera")
                         .font(Font.App.nunitoRounded(size: 16, weight: .medium))
                 }
                 .foregroundStyle(Color.App.textDark)
@@ -115,7 +115,7 @@ struct ImagePickerView: View {
 
             Divider()
 
-            // Other… → navigates to ProductSearchView
+            // Lainnya… → navigates to ProductSearchView
             Button {
                 showMenu = false
                 viewModel.openOther()
@@ -123,7 +123,7 @@ struct ImagePickerView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15))
-                    Text("Other...")
+                    Text("Lainnya...")
                         .font(Font.App.nunitoRounded(size: 16, weight: .medium))
                 }
                 .foregroundStyle(Color.App.textDark)

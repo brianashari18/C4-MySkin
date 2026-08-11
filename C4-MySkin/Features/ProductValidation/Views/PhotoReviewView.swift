@@ -76,7 +76,7 @@ struct PhotoReviewView: View {
 
                     // MARK: - Action Buttons
                     HStack(spacing: 16) {
-                        // Validate — filled primary
+                        // Validasi — filled primary
                         Button {
                             viewModel.validate()
                         } label: {
@@ -85,7 +85,7 @@ struct PhotoReviewView: View {
                                     ProgressView()
                                         .tint(.white)
                                 } else {
-                                    Text("Validate")
+                                    Text("Validasi")
                                         .font(Font.App.nunitoRounded(size: 17, weight: .bold))
                                         .foregroundStyle(.white)
                                 }
@@ -100,11 +100,11 @@ struct PhotoReviewView: View {
                         }
                         .disabled(viewModel.isLoading)
 
-                        // Retake — outlined secondary
+                        // Ulangi — outlined secondary
                         Button {
                             viewModel.retake()
                         } label: {
-                            Text("Retake")
+                            Text("Ulangi")
                                 .font(Font.App.nunitoRounded(size: 17, weight: .bold))
                                 .foregroundStyle(Color.App.mediumBlue)
                                 .frame(maxWidth: .infinity)
@@ -124,7 +124,16 @@ struct PhotoReviewView: View {
                     .padding(.bottom, 36)
                 }
             }
+
+            // MARK: - Product Not Found Modal
+            if viewModel.showProductNotFoundModal {
+                ProductNotFoundModalView {
+                    viewModel.scanAnotherProduct()
+                }
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.showProductNotFoundModal)
     }
 }
 

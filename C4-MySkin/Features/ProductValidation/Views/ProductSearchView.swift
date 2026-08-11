@@ -47,20 +47,26 @@ struct ProductSearchView: View {
                         .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
                         .font(.system(size: 16))
 
-                    TextField("Search", text: $viewModel.searchText)
+                    TextField("Cari produk...", text: $viewModel.searchText)
                         .font(Font.App.nunitoRounded(size: 16))
                         .foregroundStyle(Color.App.textDark)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
 
-                    Button {
-                        Task { await viewModel.searchProducts() }
-                    } label: {
-                        Image(systemName: "mic")
-                            .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
-                            .font(.system(size: 16))
+                    if viewModel.isSearching && !viewModel.searchResults.isEmpty {
+                        ProgressView()
+                            .scaleEffect(0.85)
+                            .tint(Color.App.mediumBlue)
+                    } else {
+                        Button {
+                            Task { await viewModel.searchProducts() }
+                        } label: {
+                            Image(systemName: "mic")
+                                .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
+                                .font(.system(size: 16))
+                        }
+                        .accessibilityLabel("Cari produk")
                     }
-                    .accessibilityLabel("Search products")
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
@@ -75,17 +81,6 @@ struct ProductSearchView: View {
                 // MARK: - Product Grid
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        if viewModel.isSearching {
-                            HStack(spacing: 10) {
-                                ProgressView()
-                                Text("Searching products...")
-                                    .font(Font.App.nunitoRounded(size: 14, weight: .medium))
-                                    .foregroundStyle(Color.App.darkBlue)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.top, 24)
-                        }
-
                         if let searchErrorMessage = viewModel.searchErrorMessage {
                             Text(searchErrorMessage)
                                 .font(Font.App.nunitoRounded(size: 13, weight: .medium))
@@ -93,30 +88,40 @@ struct ProductSearchView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
-                        if !viewModel.searchResults.isEmpty {
+                        if viewModel.isSearching && viewModel.searchResults.isEmpty {
+                            // Skeleton loader grid during initial search/load
+                            LazyVGrid(columns: columns, spacing: 16) {
+                                ForEach(0..<6, id: \.self) { _ in
+                                    ProductSkeletonCardView()
+                                }
+                            }
+                        } else if !viewModel.searchResults.isEmpty {
                             LazyVGrid(columns: columns, spacing: 16) {
                                 ForEach(viewModel.searchResults) { product in
                                     Button {
                                         Task { await viewModel.selectProduct(product) }
                                     } label: {
                                         ProductGridItemView(
-                                            productName: product.name,
+                                            productName: product.fullName,
                                             imageURL: product.imageURL,
-                                            badgeText: product.highlights.first
+                                            badgeText: product.brand ?? product.highlights.first,
+                                            isLoading: viewModel.loadingProductID == product.id
                                         )
                                     }
                                     .buttonStyle(.plain)
                                     .disabled(viewModel.isLoadingResult)
                                 }
                             }
+                            .opacity(viewModel.isSearching ? 0.6 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: viewModel.isSearching)
                         } else if !viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !viewModel.isSearching {
-                            Text("No products found.")
+                            Text("Produk tidak ditemukan.")
                                 .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                                 .foregroundStyle(Color.App.darkBlue)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.top, 24)
                         } else {
-                            Text("Browse products below or type to search.")
+                            Text("Jelajahi produk di bawah atau ketik untuk mencari.")
                                 .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                                 .foregroundStyle(Color.App.darkBlue.opacity(0.75))
                                 .frame(maxWidth: .infinity, alignment: .center)
@@ -125,27 +130,6 @@ struct ProductSearchView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
-                }
-            }
-        }
-        .overlay {
-            if viewModel.isLoadingResult {
-                ZStack {
-                    Color.black.opacity(0.15)
-                        .ignoresSafeArea()
-
-                    VStack(spacing: 12) {
-                        ProgressView()
-                        Text("Loading product details...")
-                            .font(Font.App.nunitoRounded(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.App.darkBlue)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.white)
-                    )
                 }
             }
         }

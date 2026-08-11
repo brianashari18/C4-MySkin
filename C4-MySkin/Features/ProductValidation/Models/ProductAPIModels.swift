@@ -14,11 +14,22 @@ struct ProductSearchResponse: Decodable {
 
 struct ProductSearchItem: Decodable, Identifiable, Hashable {
     let name: String
+    let brand: String?
     let url: String
     let imageURL: String?
     let highlights: [String]
 
     var id: String { url }
+
+    var fullName: String {
+        guard let brand, !brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return name
+        }
+        if name.lowercased().hasPrefix(brand.lowercased()) {
+            return name
+        }
+        return "\(brand) \(name)"
+    }
 
     var slug: String? {
         URL(string: url)?.pathComponents.last
@@ -26,13 +37,15 @@ struct ProductSearchItem: Decodable, Identifiable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case name
+        case brand
         case url
         case imageURL = "image_url"
         case highlights
     }
 
-    init(name: String, url: String, imageURL: String?, highlights: [String]) {
+    init(name: String, brand: String? = nil, url: String, imageURL: String?, highlights: [String] = []) {
         self.name = name
+        self.brand = brand
         self.url = url
         self.imageURL = imageURL
         self.highlights = highlights
@@ -41,6 +54,7 @@ struct ProductSearchItem: Decodable, Identifiable, Hashable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
+        brand = try container.decodeIfPresent(String.self, forKey: .brand)
         url = try container.decode(String.self, forKey: .url)
         imageURL = try container.decodeIfPresent(String.self, forKey: .imageURL)
         highlights = try container.decodeIfPresent([String].self, forKey: .highlights) ?? []
@@ -154,16 +168,16 @@ struct IngredientSearchResult: Decodable, Hashable, Identifiable {
 
 struct IngredientDetailResponse: Decodable {
     let name: String
-    let overview: String
+    let overview: String?
     let benefits: [IngredientBenefit]
-    let expectedTime: String
+    let expectedTime: String?
     let sideEffects: [String]
-    let tolerability: String
-    let whatTheResearchSays: String
-    let summary: String
-    let evidence: IngredientEvidence
+    let tolerability: String?
+    let whatTheResearchSays: String?
+    let summary: String?
+    let evidence: IngredientEvidence?
     let researchSections: [IngredientResearchSection]
-    let sourceURL: String
+    let sourceURL: String?
 
     enum CodingKeys: String, CodingKey {
         case name
@@ -177,6 +191,21 @@ struct IngredientDetailResponse: Decodable {
         case evidence
         case researchSections = "research_sections"
         case sourceURL = "source_url"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        overview = try container.decodeIfPresent(String.self, forKey: .overview)
+        benefits = try container.decodeIfPresent([IngredientBenefit].self, forKey: .benefits) ?? []
+        expectedTime = try container.decodeIfPresent(String.self, forKey: .expectedTime)
+        sideEffects = try container.decodeIfPresent([String].self, forKey: .sideEffects) ?? []
+        tolerability = try container.decodeIfPresent(String.self, forKey: .tolerability)
+        whatTheResearchSays = try container.decodeIfPresent(String.self, forKey: .whatTheResearchSays)
+        summary = try container.decodeIfPresent(String.self, forKey: .summary)
+        evidence = try container.decodeIfPresent(IngredientEvidence.self, forKey: .evidence)
+        researchSections = try container.decodeIfPresent([IngredientResearchSection].self, forKey: .researchSections) ?? []
+        sourceURL = try container.decodeIfPresent(String.self, forKey: .sourceURL)
     }
 }
 

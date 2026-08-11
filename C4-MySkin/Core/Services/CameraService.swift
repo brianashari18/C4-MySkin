@@ -39,12 +39,12 @@ final class CameraService: NSObject, ObservableObject {
         switch status {
         case .authorized:
             await MainActor.run { self.isAuthorized = true }
-            configureSession()
+            await configureSession()
 
         case .notDetermined:
             let granted = await AVCaptureDevice.requestAccess(for: .video)
             await MainActor.run { self.isAuthorized = granted }
-            if granted { configureSession() }
+            if granted { await configureSession() }
 
         case .denied, .restricted:
             await MainActor.run {
@@ -57,36 +57,40 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
 
-    // MARK: - Session Configuration (runs on sessionQueue)
+    // MARK: - Session Configuration (awaitable, runs on sessionQueue)
 
-    private func configureSession() {
-        sessionQueue.async { [weak self] in
-            guard let self else { return }
+    private func configureSession() async {
+        await withCheckedContinuation { continuation in
+            sessionQueue.async { [weak self] in
+                guard let self else { continuation.resume(); return }
 
-            self.session.beginConfiguration()
-            self.session.sessionPreset = .photo
+                self.session.beginConfiguration()
+                self.session.sessionPreset = .photo
 
-            // — Input —
-            guard
-                let device = AVCaptureDevice.default(
-                    .builtInWideAngleCamera, for: .video, position: .back
-                ),
-                let input = try? AVCaptureDeviceInput(device: device),
-                self.session.canAddInput(input)
-            else {
-                DispatchQueue.main.async { self.error = .configurationFailed }
+                // — Input —
+                guard
+                    let device = AVCaptureDevice.default(
+                        .builtInWideAngleCamera, for: .video, position: .back
+                    ),
+                    let input = try? AVCaptureDeviceInput(device: device),
+                    self.session.canAddInput(input)
+                else {
+                    DispatchQueue.main.async { self.error = .configurationFailed }
+                    self.session.commitConfiguration()
+                    continuation.resume()
+                    return
+                }
+                self.session.addInput(input)
+                self.videoInput = input
+
+                // — Output —
+                if self.session.canAddOutput(self.photoOutput) {
+                    self.session.addOutput(self.photoOutput)
+                }
+
                 self.session.commitConfiguration()
-                return
+                continuation.resume()
             }
-            self.session.addInput(input)
-            self.videoInput = input
-
-            // — Output —
-            if self.session.canAddOutput(self.photoOutput) {
-                self.session.addOutput(self.photoOutput)
-            }
-
-            self.session.commitConfiguration()
         }
     }
 
@@ -139,7 +143,7 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
 }
 
 // MARK: - Camera Error
-enum CameraError: LocalizedError {
+enum CameraError: LocalizedError, Equatable {
     case notAuthorized
     case configurationFailed
 
