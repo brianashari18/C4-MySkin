@@ -246,10 +246,11 @@ struct PersonalizationOptionList<Option: Identifiable, Content: View>: View wher
 struct PersonalizationMascotFooter: View {
     let noteText: String
     var showsNote: Bool = true
+    var mascotAnimation: MascotAnimation = .peekHead
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            MascotLottieView(animation: showsNote ? .head : .peekHead)
+            MascotLottieView(animation: showsNote ? .head : mascotAnimation)
                 .frame(width: 420, height: 420)
                 .scaleEffect(showsNote ? 1.04 : 2)
                 .offset(x: -5, y: showsNote ? 140 : 100)

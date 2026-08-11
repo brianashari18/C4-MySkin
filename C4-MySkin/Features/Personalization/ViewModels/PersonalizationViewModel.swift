@@ -22,6 +22,7 @@ final class PersonalizationViewModel {
 
     private let allowsSkinTypeAssessment: Bool
     private let allowsSensitivityAssessment: Bool
+    private let stopsAtSensitivitySelection: Bool
     private var skinTypeAnswers: [PersonalizationOption] = []
     private var sensitivityAnswers: [Double] = []
     private var noConcernPageIndexes: Set<Int> = []
@@ -30,10 +31,12 @@ final class PersonalizationViewModel {
         initialPersonalization: OnboardingPersonalization = OnboardingPersonalization(),
         allowsAssessment: Bool = true,
         allowsSkinTypeAssessment: Bool? = nil,
-        allowsSensitivityAssessment: Bool? = nil
+        allowsSensitivityAssessment: Bool? = nil,
+        stopsAtSensitivitySelection: Bool = false
     ) {
         self.allowsSkinTypeAssessment = allowsSkinTypeAssessment ?? allowsAssessment
         self.allowsSensitivityAssessment = allowsSensitivityAssessment ?? allowsAssessment
+        self.stopsAtSensitivitySelection = stopsAtSensitivitySelection
         selectedSkinType = initialPersonalization.skinType
         selectedSkinSensitivity = initialPersonalization.skinSensitivity
         selectedConcerns = Set(initialPersonalization.skinConcerns)
@@ -186,6 +189,10 @@ final class PersonalizationViewModel {
         }
 
         selectedSkinSensitivity = skinSensitivity
+        if stopsAtSensitivitySelection {
+            phase = .skinSensitivitySelection
+            return
+        }
         concernPageIndex = 0
         phase = .skinConcern
     }

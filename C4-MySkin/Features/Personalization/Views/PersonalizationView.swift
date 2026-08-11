@@ -11,12 +11,16 @@ import SwiftUI
 struct PersonalizationView: View {
     @State private var viewModel: PersonalizationViewModel
     let onComplete: (OnboardingPersonalization) -> Void
+    let finishesAfterSensitivity: Bool
+    let stopsAtSensitivitySelection: Bool
 
     init(
         initialPersonalization: OnboardingPersonalization = OnboardingPersonalization(),
         allowsAssessment: Bool = true,
         allowsSkinTypeAssessment: Bool? = nil,
         allowsSensitivityAssessment: Bool? = nil,
+        finishesAfterSensitivity: Bool = false,
+        stopsAtSensitivitySelection: Bool = false,
         onComplete: @escaping (OnboardingPersonalization) -> Void
     ) {
         _viewModel = State(
@@ -25,18 +29,23 @@ struct PersonalizationView: View {
                 allowsAssessment: allowsAssessment,
                 allowsSkinTypeAssessment: allowsSkinTypeAssessment,
                 allowsSensitivityAssessment: allowsSensitivityAssessment
+                , stopsAtSensitivitySelection: stopsAtSensitivitySelection
             )
         )
         self.onComplete = onComplete
+        self.finishesAfterSensitivity = finishesAfterSensitivity
+        self.stopsAtSensitivitySelection = stopsAtSensitivitySelection
     }
 
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                PersonalizationProgressHeader(
-                    section: viewModel.phase.section,
-                    fillsCurrentMilestone: viewModel.phase.fillsCurrentMilestone
-                )
+                if !finishesAfterSensitivity {
+                    PersonalizationProgressHeader(
+                        section: viewModel.phase.section,
+                        fillsCurrentMilestone: viewModel.phase.fillsCurrentMilestone
+                    )
+                }
 
                 ZStack(alignment: .bottom) {
                     VStack(spacing: 32) {
@@ -48,11 +57,14 @@ struct PersonalizationView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 32)
 
-                    PersonalizationMascotFooter(
-                        noteText: viewModel.mascotNoteText,
-                        showsNote: viewModel.phase != .skinTypeResult && viewModel.phase != .summary
-                    )
-                    .id(viewModel.phase)
+                    if !finishesAfterSensitivity || viewModel.phase == .skinTypeSelection {
+                        PersonalizationMascotFooter(
+                            noteText: "",
+                            showsNote: false,
+                            mascotAnimation: finishesAfterSensitivity ? .idle : .peekHead
+                        )
+                        .id(viewModel.phase)
+                    }
                 }
             }
 
@@ -66,12 +78,17 @@ struct PersonalizationView: View {
                 onBack: viewModel.goBack,
                 onNext: advanceFromSideNavigation
             )
-            .opacity(viewModel.phase.showsSideNavigation ? 1 : 0)
-            .allowsHitTesting(viewModel.phase.showsSideNavigation)
+            .opacity(viewModel.phase.showsSideNavigation && !finishesAfterSensitivity ? 1 : 0)
+            .allowsHitTesting(viewModel.phase.showsSideNavigation && !finishesAfterSensitivity)
         }
         .contentShape(Rectangle())
         .onTapGesture {
             if viewModel.phase == .summary {
+                onComplete(viewModel.result)
+            }
+        }
+        .onChange(of: viewModel.phase) { _, phase in
+            if finishesAfterSensitivity && phase == .skinConcern {
                 onComplete(viewModel.result)
             }
         }
@@ -127,7 +144,9 @@ struct PersonalizationView: View {
         case .skinSensitivitySelection:
             SkinSensitivitySelectionContent(
                 selectedSensitivity: viewModel.selectedSkinSensitivity,
-                onSelect: viewModel.selectSkinSensitivity
+                onSelect: viewModel.selectSkinSensitivity,
+                showsCompletionButton: stopsAtSensitivitySelection,
+                onComplete: { onComplete(viewModel.result) }
             )
         case .skinSensitivityAssessment:
             SkinSensitivityAssessmentContent(viewModel: viewModel)
@@ -215,6 +234,8 @@ private struct SkinTypeConfirmationContent: View {
 private struct SkinSensitivitySelectionContent: View {
     let selectedSensitivity: SkinSensitivity?
     let onSelect: (SkinSensitivity) -> Void
+    var showsCompletionButton = false
+    var onComplete: (() -> Void)?
 
     var body: some View {
         PersonalizationQuestionLayout(title: "Bagaimana sensitivitas\nkulit wajah kamu?") {
@@ -228,6 +249,14 @@ private struct SkinSensitivitySelectionContent: View {
                     onSelect(sensitivity)
                 }
                 .frame(maxWidth: 280)
+            }
+
+            if showsCompletionButton, let onComplete {
+                PersonalizationActionBar(
+                    primaryTitle: "Selesai",
+                    primaryAction: onComplete
+                )
+                .padding(.top, 20)
             }
         }
     }

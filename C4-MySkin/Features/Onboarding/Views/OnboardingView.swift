@@ -49,7 +49,9 @@ struct OnboardingView: View {
                     PersonalizationView(
                         initialPersonalization: viewModel.personalization,
                         allowsAssessment: false,
-                        allowsSkinTypeAssessment: true,
+                        allowsSkinTypeAssessment: false,
+                        finishesAfterSensitivity: true,
+                        stopsAtSensitivitySelection: true,
                         onComplete: viewModel.completePersonalization
                     )
                 case .mainPage:
