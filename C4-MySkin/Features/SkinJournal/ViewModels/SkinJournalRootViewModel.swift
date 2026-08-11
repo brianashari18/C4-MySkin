@@ -25,4 +25,9 @@ final class SkinJournalRootViewModel {
     func updateLatestJourney(_ transform: @escaping (inout SkincareJourney) -> Void) {
         store.updateLatestJourney(transform)
     }
+
+    func addJourney(_ journey: SkincareJourney) {
+        store.addJourney(journey)
+    }
 }
+

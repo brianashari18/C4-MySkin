@@ -17,13 +17,25 @@ struct PillButton: View {
     }
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            action()
+        }) {
             Text(title)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(isEnabled ? Color(.label) : Color(.secondaryLabel))
-                .frame(maxWidth: .infinity, minHeight: 56)
-                .background(isEnabled ? Color(.secondarySystemBackground) : Color(.tertiarySystemBackground))
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(Color.white)
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .background(
+                    isEnabled
+                    ? Color(red: 0.38, green: 0.61, blue: 0.93)
+                    : Color(red: 0.70, green: 0.80, blue: 0.92)
+                )
                 .clipShape(Capsule())
+                .shadow(
+                    color: isEnabled ? Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.3) : .clear,
+                    radius: 8, x: 0, y: 4
+                )
         }
         .disabled(!isEnabled)
         .buttonStyle(.plain)
@@ -38,3 +50,4 @@ struct PillButton: View {
     }
     .padding()
 }
+

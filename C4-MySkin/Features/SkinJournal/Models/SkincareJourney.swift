@@ -162,3 +162,67 @@ struct ProgressPhoto: Identifiable, Codable {
         self.milestoneOrder = milestoneOrder
     }
 }
+
+/// Algoritma progress milestone/flag perjalanan skincare.
+///
+/// Aturan: tiap FLAG = periode 2 minggu (14 hari). Upload foto/jurnal yang
+/// menyelesaikan milestone = flag selesai → lanjut ke flag berikutnya.
+/// Nomor flag diambil dari milestone pertama yang BELUM selesai (upload-driven);
+/// minggu berjalan DI DALAM flag dihitung dari waktu (pengingat "skrg minggu
+/// ke berapa").
+struct MilestoneProgress {
+    /// Durasi satu flag (hari) = 2 minggu.
+    static let flagDurationDays = 14
+
+    /// Nomor flag saat ini (1-based). > totalFlags berarti semua selesai.
+    let currentFlag: Int
+    /// Total flag pada journey ini.
+    let totalFlags: Int
+    /// Hari sudah berjalan di flag saat ini (tidak dibatasi — bisa overdue).
+    let daysIntoFlag: Int
+    /// Minggu berjalan (1-based) — reminder "skrg di minggu ke berapa".
+    let currentWeek: Int
+    /// Progress 0...1 menuju target upload berikutnya (capped di 1).
+    let progress: Double
+    /// Tanggal flag saat ini dimulai (flag 1 = startDate journey, selanjutnya =
+    /// tanggal selesai flag sebelumnya).
+    let flagStartDate: Date
+    /// Tanggal target upload foto berikutnya (akhir flag).
+    let nextUploadDate: Date
+    /// Sudah lewat target upload (belum upload).
+    let isOverdue: Bool
+    /// Semua flag sudah selesai.
+    let isComplete: Bool
+
+    init(journey: SkincareJourney, now: Date = Date()) {
+        let sorted = journey.milestones.sorted { $0.order < $1.order }
+        totalFlags = max(sorted.count, 1)
+        let completed = sorted.filter(\.isCompleted)
+        isComplete = completed.count >= totalFlags
+        currentFlag = isComplete
+            ? totalFlags + 1
+            : (sorted.first { !$0.isCompleted }?.order ?? totalFlags)
+
+        let flagStart: Date
+        if isComplete {
+            // Semua selesai — anchor di flag terakhir yang selesai
+            flagStart = completed.last?.completedDate ?? journey.startDate
+        } else if currentFlag <= 1 {
+            flagStart = journey.startDate
+        } else if let prev = completed.last, let completedDate = prev.completedDate {
+            // Flag baru dimulai saat flag sebelumnya diselesaikan (upload)
+            flagStart = completedDate
+        } else {
+            flagStart = journey.startDate
+                .addingTimeInterval(TimeInterval(currentFlag - 1) * Double(Self.flagDurationDays) * 86400)
+        }
+        flagStartDate = flagStart
+
+        let seconds = now.timeIntervalSince(flagStart)
+        daysIntoFlag = max(0, Int(seconds / 86400))
+        currentWeek = daysIntoFlag / 7 + 1
+        progress = min(1, Double(daysIntoFlag) / Double(Self.flagDurationDays))
+        nextUploadDate = flagStart.addingTimeInterval(TimeInterval(Self.flagDurationDays) * 86400)
+        isOverdue = now > nextUploadDate
+    }
+}

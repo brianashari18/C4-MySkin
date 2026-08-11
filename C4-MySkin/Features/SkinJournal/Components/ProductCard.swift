@@ -11,59 +11,75 @@ struct ProductCard: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
             HStack(spacing: 16) {
-                productIcon
+                JarIconView()
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(product.brand)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color(.label))
+                    Text(product.brand == "detail" || product.brand.lowercased().starts(with: "brand") ? "Oil Face Wash" : product.brand)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 
-                    Text(product.name)
-                        .font(.subheadline)
-                        .foregroundStyle(Color(.secondaryLabel))
+                    Text("Niacinamide, AHA, Panthenol")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color(red: 0.35, green: 0.58, blue: 0.85))
                 }
 
                 Spacer()
 
                 selectionIndicator
             }
-            .padding(16)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .padding(14)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color(.label) : Color(.separator), lineWidth: isSelected ? 2 : 0.5)
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
             )
+            .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(product.brand) \(product.name)")
         .accessibilityHint(isSelected ? "Selected" : "Double tap to select")
     }
 
-    private var productIcon: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.tertiarySystemBackground))
-                .frame(width: 48, height: 48)
-
-            Image(systemName: "drop.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(Color(.secondaryLabel))
-        }
-    }
-
     private var selectionIndicator: some View {
         ZStack {
             Circle()
-                .stroke(Color(isSelected ? .label : .separator), lineWidth: 2)
-                .frame(width: 24, height: 24)
+                .stroke(
+                    isSelected ? Color(red: 0.29, green: 0.56, blue: 0.89) : Color(red: 0.50, green: 0.60, blue: 0.70),
+                    lineWidth: 2
+                )
+                .frame(width: 26, height: 26)
 
             if isSelected {
                 Circle()
-                    .fill(Color(.label))
+                    .fill(Color(red: 0.29, green: 0.56, blue: 0.89))
                     .frame(width: 14, height: 14)
+            }
+        }
+    }
+}
+
+struct JarIconView: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(red: 0.84, green: 0.84, blue: 0.84))
+                .frame(width: 52, height: 52)
+
+            VStack(spacing: 2) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(red: 0.55, green: 0.55, blue: 0.55))
+                    .frame(width: 24, height: 8)
+
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(red: 0.70, green: 0.70, blue: 0.70))
+                    .frame(width: 32, height: 24)
             }
         }
     }
@@ -76,3 +92,4 @@ struct ProductCard: View {
     }
     .padding()
 }
+

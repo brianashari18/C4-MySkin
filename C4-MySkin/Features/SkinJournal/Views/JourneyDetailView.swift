@@ -6,109 +6,129 @@
 import SwiftUI
 
 struct JourneyDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     let product: SkincareProduct
     let onStart: () -> Void
 
     @State private var viewModel: JourneyDetailViewModel?
 
     var body: some View {
-        VStack(spacing: 0) {
-            BackButton { }
-                .padding(.horizontal, 20)
+        ZStack {
+            // Soft ice blue background gradient
+            LinearGradient(
+                colors: [
+                    Color(red: 0.94, green: 0.97, blue: 1.0),
+                    Color(red: 0.90, green: 0.95, blue: 0.99)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Top bar with Back button
+                HStack {
+                    BackButton {
+                        dismiss()
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
                 .padding(.top, 8)
 
-            Text("Selected product")
-                .font(.title2.weight(.bold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Selected Product")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                            .padding(.top, 12)
 
-            ProductRow(product: product)
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+                        SelectedProductCard(product: product)
 
-            Text("You'll go through 2 milestones")
-                .font(.body)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
+                        Text("You'll go through 2 milestones")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                            .padding(.top, 8)
 
-            VStack(alignment: .leading, spacing: 24) {
-                ForEach(Milestone.defaultMilestones) { milestone in
-                    MilestoneRow(milestone: milestone)
+                        VStack(alignment: .leading, spacing: 20) {
+                            ForEach(Milestone.defaultMilestones) { milestone in
+                                MilestoneDetailRow(milestone: milestone)
+                            }
+                        }
+
+                        Spacer(minLength: 24)
+
+                        TipCard()
+                            .padding(.bottom, 16)
+                    }
+                    .padding(.horizontal, 24)
                 }
+
+                Spacer()
+
+                PillButton(title: "Start Journey") {
+                    viewModel?.startJourney()
+                    onStart()
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 24)
-
-            TipCard()
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-
-            Spacer()
-
-            PillButton(title: "Start journey") {
-                viewModel?.startJourney()
-                onStart()
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 32)
         }
+        .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel = JourneyDetailViewModel(product: product)
         }
     }
 }
 
-private struct ProductRow: View {
+private struct SelectedProductCard: View {
     let product: SkincareProduct
 
     var body: some View {
         HStack(spacing: 16) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.tertiarySystemBackground))
-                .frame(width: 56, height: 56)
-                .overlay(
-                    Image(systemName: "drop.fill")
-                        .foregroundStyle(Color(.secondaryLabel))
-                )
+            JarIconView()
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(product.brand)
-                    .font(.body.weight(.semibold))
-                Text(product.name)
-                    .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                Text(product.brand == "detail" || product.brand.lowercased().starts(with: "brand") ? "Oil Face Wash" : product.brand)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+
+                Text("Niacinamide, AHA, Panthenol")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(Color(red: 0.35, green: 0.58, blue: 0.85))
             }
 
             Spacer()
         }
-        .padding(16)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(14)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.separator), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
         )
+        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
     }
 }
 
-private struct MilestoneRow: View {
+private struct MilestoneDetailRow: View {
     let milestone: Milestone
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             Text("Milestone \(milestone.order)")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color(.secondaryLabel))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 
             Text(milestone.title)
-                .font(.title3.weight(.bold))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 
-            Text(milestone.subtitle)
-                .font(.body)
-                .foregroundStyle(Color(.secondaryLabel))
-                .lineLimit(2)
+            Text("to see the\nblablabla\nblablabla")
+                .font(.system(size: 15, weight: .regular))
+                .foregroundStyle(Color(red: 0.45, green: 0.52, blue: 0.60))
+                .lineSpacing(2)
+                .padding(.top, 2)
         }
     }
 }
@@ -116,23 +136,35 @@ private struct MilestoneRow: View {
 private struct TipCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("for the best results, take a progress photo **every 2 weeks**")
-                .font(.body)
+            (
+                Text("for the best results, take\na progress photo ")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                +
+                Text("every 2 weeks")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+            )
+            .lineSpacing(2)
+
             Text("We'll remind you when it's time for each check in")
-                .font(.footnote)
-                .foregroundStyle(Color(.secondaryLabel))
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Color(red: 0.60, green: 0.65, blue: 0.72))
+                .padding(.top, 2)
         }
-        .padding(16)
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.separator), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
         )
+        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
     }
 }
 
 #Preview {
     JourneyDetailView(product: SkincareProduct.samples[0], onStart: {})
 }
+

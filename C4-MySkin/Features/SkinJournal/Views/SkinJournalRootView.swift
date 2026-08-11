@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct SkinJournalRootView: View {
     @State private var viewModel = SkinJournalRootViewModel()
@@ -14,67 +15,109 @@ struct SkinJournalRootView: View {
         NavigationStack(path: $path) {
             SkinJournalMainView(
                 journey: viewModel.latestJourney,
-                onSkinJournaling: { path.append(SkinJournalRoute.chooseProduct) },
+                onSkinJournaling: { path.append(SkinJournalRoute.mainJourney) },
                 onProductValidation: { path.append(SkinJournalRoute.productValidation) }
             )
             .navigationDestination(for: SkinJournalRoute.self) { route in
                 switch route {
-                case .chooseProduct:
-                    ChooseProductView(
-                        selectedProduct: $selectedProduct,
-                        onContinue: { path.append(SkinJournalRoute.journeyDetail) }
+                case .mainJourney:
+                    // "Your skin from time to time" — empty/active state
+                    let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
+                    JourneyMainView(
+                        journey: journey,
+                        isJourneyActive: viewModel.latestJourney != nil,
+                        onAddImage: {
+                            CameraSessionManager.shared.prepare()
+                            path.append(SkinJournalRoute.camera)
+                        },
+                        onChooseProduct: {
+                            path.append(SkinJournalRoute.chooseProduct(imageName: nil))
+                        }
                     )
 
-                case .journeyDetail:
-                    if let product = selectedProduct {
-                        JourneyDetailView(product: product) {
-                            path.append(SkinJournalRoute.mainJourney)
+                case .chooseProduct(let imageName):
+                    ChooseProductView(
+                        selectedProduct: $selectedProduct,
+                        onContinue: {
+                            guard let product = selectedProduct else { return }
+                            path.append(SkinJournalRoute.selectedProduct(product: product, imageName: imageName))
                         }
-                    }
+                    )
 
-                case .mainJourney:
-                    if let journey = viewModel.latestJourney {
-                        JourneyMainView(
-                            journey: journey,
-                            onAddImage: { path.append(SkinJournalRoute.camera) },
-                            onJournalEntry: { path.append(SkinJournalRoute.journalEntry) },
-                            onSelfAssessment: { path.append(SkinJournalRoute.selfAssessment) }
-                        )
-                    }
+                case .selectedProduct(let product, let imageName):
+                    SelectedProductView(
+                        product: product,
+                        onStartJourney: {
+                            if viewModel.latestJourney == nil {
+                                viewModel.addJourney(SkincareJourney(product: product))
+                            }
+                            if let imageName, !imageName.isEmpty {
+                                path.append(SkinJournalRoute.selfAssessment(imageName: imageName))
+                            } else {
+                                // Pop back to mainJourney screen (now active)
+                                path.removeLast(2)
+                            }
+                        }
+                    )
+
 
                 case .camera:
-                    CameraFlowView { _ in
-                        path.removeLast()
-                    }
-
-                case .journalEntry:
-                    if viewModel.latestJourney != nil {
-                        JournalEntryView(
-                            milestoneTitle: "Milestone \(viewModel.latestJourney?.milestones.first { !$0.isCompleted }?.order ?? 1)"
-                        ) { entry in
-                            viewModel.updateLatestJourney { journey in
-                                journey.journalEntries.append(entry)
+                    CameraFlowView { imageName in
+                        if !imageName.isEmpty {
+                            path.removeLast() // keluar dari camera
+                            if viewModel.latestJourney != nil {
+                                // Journey sudah ada → langsung kuesioner (foto untuk entry)
+                                path.append(SkinJournalRoute.selfAssessment(imageName: imageName))
+                            } else {
+                                // Belum ada journey → pilih produk dulu
+                                path.append(SkinJournalRoute.chooseProduct(imageName: imageName))
                             }
-                            path.removeLast()
-                        } onBack: {
+                        } else {
                             path.removeLast()
                         }
                     }
 
-                case .selfAssessment:
-                    SelfAssessmentView { mood, symptoms, note in
-                        viewModel.updateLatestJourney { journey in
-                            if let index = journey.journalEntries.firstIndex(where: { Calendar.current.isDateInToday($0.date) }) {
-                                journey.journalEntries[index].mood = mood
-                                journey.journalEntries[index].symptoms = symptoms
-                                journey.journalEntries[index].note += "\n\(note)"
+                case .selfAssessment(let imageName):
+                    // Kuesioner 3 langkah
+                    SelfAssessmentView { skinCondition, howItFeels, whatYouNoticed in
+                        path.append(SkinJournalRoute.journalEntry(
+                            imageName: imageName,
+                            skinCondition: skinCondition,
+                            howItFeels: howItFeels,
+                            whatYouNoticed: whatYouNoticed
+                        ))
+                    } onBack: {
+                        path.removeLast()
+                    }
+
+                case .journalEntry(let imageName, let skinCondition, let howItFeels, let whatYouNoticed):
+                    let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
+                    JournalEntryView(
+                        milestoneTitle: "Milestone \(journey.milestones.first { !$0.isCompleted }?.order ?? 1)",
+                        imageName: imageName,
+                        skinCondition: skinCondition,
+                        howItFeels: howItFeels,
+                        whatYouNoticed: whatYouNoticed
+                    ) { entry in
+                        viewModel.updateLatestJourney { j in
+                            j.journalEntries.append(entry)
+                            let milestoneIndex = j.milestones.firstIndex(where: { !$0.isCompleted })
+                            if let imageName, !imageName.isEmpty {
+                                j.progressPhotos.append(
+                                    ProgressPhoto(
+                                        date: Date(),
+                                        imageName: imageName,
+                                        milestoneOrder: (milestoneIndex ?? 0) + 1
+                                    )
+                                )
                             }
-                            if let milestoneIndex = journey.milestones.firstIndex(where: { !$0.isCompleted }) {
-                                journey.milestones[milestoneIndex].isCompleted = true
-                                journey.milestones[milestoneIndex].completedDate = Date()
+                            if let milestoneIndex {
+                                j.milestones[milestoneIndex].isCompleted = true
+                                j.milestones[milestoneIndex].completedDate = Date()
                             }
                         }
-                        path.removeLast()
+                        // Balik ke "Your skin from time to time"
+                        path.removeLast(2)
                     } onBack: {
                         path.removeLast()
                     }
@@ -85,19 +128,116 @@ struct SkinJournalRootView: View {
                     }
                 }
             }
+            .task {
+                #if !targetEnvironment(simulator)
+                // Warm-up discovery kamera di app start — call pertama
+                // AVCaptureDevice.default lambat; dengan ini call berikutnya
+                // (saat "Add Photos") langsung cepat.
+                DispatchQueue.global(qos: .utility).async {
+                    _ = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+                }
+                #endif
+            }
+            .onAppear {
+                #if DEBUG
+                let args = ProcessInfo.processInfo.arguments
+                // Hook pengujian: `xcrun simctl launch <udid> test.C4-MySkin --camera-guide`
+                if args.contains("--camera-guide") {
+                    CameraSessionManager.shared.prepare()
+                    path.append(SkinJournalRoute.camera)
+                }
+                // Hook pengujian kuesioner:
+                // `xcrun simctl launch <udid> test.C4-MySkin --self-assessment`
+                if args.contains("--self-assessment") {
+                    path.append(SkinJournalRoute.selfAssessment(imageName: nil))
+                }
+                // Hook pengujian timelapse: buat journey sample (3 foto sintetis)
+                // lalu buka halaman "Your skin from time to time" — timelapse
+                // inline auto-play tampil di sana.
+                // `xcrun simctl launch <udid> test.C4-MySkin --show-timelapse`
+                if args.contains("--show-timelapse") {
+                    if viewModel.latestJourney == nil {
+                        Self.makeSampleJourney(addTo: viewModel)
+                    }
+                    path.append(SkinJournalRoute.mainJourney)
+                }
+                // Hook pengujian main page ACTIVE state: journey sample dibuat
+                // tapi TETAP di main page (tidak push route).
+                // `xcrun simctl launch <udid> test.C4-MySkin --main-active`
+                if args.contains("--main-active") {
+                    if viewModel.latestJourney == nil {
+                        Self.makeSampleJourney(addTo: viewModel)
+                    }
+                }
+                #endif
+            }
+        }
+    }
+
+    /// Buat journey sample (3 foto sintetis) untuk DEBUG hook.
+    private static func makeSampleJourney(addTo viewModel: SkinJournalRootViewModel) {
+        // Journey sample: mulai 21 hari lalu, flag 1 selesai 7 hari
+        // lalu → sekarang di Milestone #2, Week 2 (progress 50%).
+        var journey = SkincareJourney(
+            product: SkincareProduct.samples[0],
+            startDate: Date().addingTimeInterval(-21 * 86400)
+        )
+        if let mIndex = journey.milestones.firstIndex(where: { !$0.isCompleted }) {
+            journey.milestones[mIndex].isCompleted = true
+            journey.milestones[mIndex].completedDate = Date().addingTimeInterval(-7 * 86400)
+        }
+        let base = Date().addingTimeInterval(-7 * 86400)
+        for i in 0..<3 {
+            let name = "captured_face_sample_\(i)"
+            if let url = CameraViewModel.imageURL(for: name),
+               let image = Self.sampleFaceImage(index: i),
+               let data = image.pngData() {
+                try? FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try? data.write(to: url)
+            }
+            journey.progressPhotos.append(
+                ProgressPhoto(date: base.addingTimeInterval(TimeInterval(i) * 3 * 86400), imageName: name)
+            )
+        }
+        viewModel.addJourney(journey)
+    }
+
+    /// Foto sintetis untuk DEBUG hook `--show-timelapse`.
+    private static func sampleFaceImage(index: Int) -> UIImage? {
+        let size = CGSize(width: 720, height: 720)
+        let colors: [UIColor] = [.systemTeal, .systemIndigo, .systemPink]
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            colors[index % colors.count].setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+
+            UIColor(white: 0.95, alpha: 0.9).setFill()
+            UIBezierPath(
+                ovalIn: CGRect(x: size.width * 0.28, y: size.height * 0.20, width: size.width * 0.44, height: size.height * 0.55)
+            ).fill()
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 44),
+                .foregroundColor: UIColor.white,
+            ]
+            NSString(string: "Sample \(index + 1)").draw(at: CGPoint(x: 40, y: 40), withAttributes: attributes)
         }
     }
 }
 
 enum SkinJournalRoute: Hashable {
-    case chooseProduct
-    case journeyDetail
+    case chooseProduct(imageName: String?)
+    case selectedProduct(product: SkincareProduct, imageName: String?)
     case mainJourney
     case camera
-    case journalEntry
-    case selfAssessment
+    case selfAssessment(imageName: String?)
+    case journalEntry(imageName: String?, skinCondition: String, howItFeels: String, whatYouNoticed: String)
     case productValidation
 }
+
 
 #Preview {
     SkinJournalRootView()

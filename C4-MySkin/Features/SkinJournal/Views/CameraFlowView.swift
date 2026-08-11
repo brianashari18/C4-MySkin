@@ -14,12 +14,16 @@ struct CameraFlowView: View {
             switch viewModel.step {
             case .guide:
                 CameraGuideView(
-                    onTakePhoto: { viewModel.takePhoto() },
+                    isFaceCentered: $viewModel.isFaceCentered,
+                    onTakePhoto: { image in
+                        viewModel.setCapturedImage(image)
+                    },
                     onBack: { onComplete("") }
                 )
 
             case .preview, .confirm:
                 PhotoConfirmationView(
+                    capturedImage: viewModel.capturedImage,
                     onRetake: { viewModel.retake() },
                     onUsePhoto: {
                         if let imageName = viewModel.usePhoto() {
@@ -29,9 +33,15 @@ struct CameraFlowView: View {
                 )
             }
         }
+        .onDisappear {
+            // Lepas kamera saat keluar dari alur kamera — cegah session
+            // menumpuk & kamera tetap menyala di background.
+            CameraSessionManager.shared.stop()
+        }
     }
 }
 
 #Preview {
     CameraFlowView { _ in }
 }
+
