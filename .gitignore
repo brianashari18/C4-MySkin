@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# Environment
+.env
+
 # Xcode
 xcuserdata/
 DerivedData/
