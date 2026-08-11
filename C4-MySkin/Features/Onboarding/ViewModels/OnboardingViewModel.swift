@@ -38,16 +38,10 @@ final class OnboardingViewModel {
         advance()
     }
 
-    func selectSkinType(_ skinType: SkinType) {
-        personalization.skinType = skinType
-        advance()
-    }
-
-    func selectSkinSensitivity(_ skinSensitivity: SkinSensitivity) {
-        personalization.skinSensitivity = skinSensitivity
-    }
-
-    func finishOnboarding() {
+    func completePersonalization(_ personalization: OnboardingPersonalization) {
+        self.personalization.skinType = personalization.skinType
+        self.personalization.skinSensitivity = personalization.skinSensitivity
+        self.personalization.skinConcerns = personalization.skinConcerns
         currentStep = .mainPage
     }
 }

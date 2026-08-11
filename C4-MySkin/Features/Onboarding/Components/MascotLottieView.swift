@@ -17,13 +17,23 @@ struct MascotLottieView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> LottieAnimationView {
-        let animationView = LottieAnimationView()
+        let animationView: LottieAnimationView
+        if animation == .head {
+            animationView = LottieAnimationView(dotLottieName: animation.rawValue) { view, _ in
+                view.loopMode = loops ? .loop : .playOnce
+                view.play()
+            }
+        } else {
+            animationView = LottieAnimationView()
+            animationView.animation = MascotLottieCache.animation(for: animation)
+        }
         animationView.contentMode = .scaleAspectFit
         animationView.backgroundBehavior = .pauseAndRestore
         animationView.loopMode = loops ? .loop : .playOnce
-        animationView.animation = MascotLottieCache.animation(for: animation)
         context.coordinator.currentAnimation = animation
-        animationView.play()
+        if animation != .head {
+            animationView.play()
+        }
         return animationView
     }
 

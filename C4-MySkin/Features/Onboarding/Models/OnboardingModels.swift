@@ -11,6 +11,7 @@ struct OnboardingPersonalization {
     var name: String = ""
     var skinType: SkinType?
     var skinSensitivity: SkinSensitivity?
+    var skinConcerns: [SkinConcern] = []
 }
 
 enum OnboardingStep: Int, CaseIterable {
@@ -20,8 +21,7 @@ enum OnboardingStep: Int, CaseIterable {
     case getNamePrompt
     case inputName
     case personalizationIntro
-    case skinType
-    case skinSensitivity
+    case personalization
     case mainPage
 }
 
@@ -33,6 +33,13 @@ enum SkinType: String, CaseIterable, Identifiable {
     case notSureYet = "Belum Yakin"
 
     var id: String { rawValue }
+
+    static let assessmentConfirmationCases: [SkinType] = [
+        .dry,
+        .normal,
+        .oily,
+        .combination
+    ]
 }
 
 enum SkinSensitivity: String, CaseIterable, Identifiable {
@@ -50,6 +57,7 @@ enum MascotAnimation: String, CaseIterable {
     case wave = "MascotWave"
     case pointing = "MascotPointing"
     case peekHead = "MascotPeekHead"
+    case head = "MascotHead"
 }
 
 extension OnboardingStep {
@@ -61,13 +69,13 @@ extension OnboardingStep {
         switch self {
         case .welcome:
             .wave
-        case .introduction, .skincareHelp, .personalizationIntro, .skinType:
+        case .introduction, .skincareHelp, .personalizationIntro:
             .idle
         case .getNamePrompt:
             .pointing
         case .inputName:
             .peekHead
-        case .skinSensitivity, .mainPage:
+        case .personalization, .mainPage:
             nil
         }
     }

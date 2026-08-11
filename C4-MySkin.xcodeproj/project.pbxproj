@@ -39,6 +39,7 @@
 			children = (
 				31301E363025DF77008B7ED3 /* C4-MySkin */,
 				31301E353025DF77008B7ED3 /* Products */,
+				A9F6610D302BB82F008F97CE /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -48,6 +49,13 @@
 				31301E343025DF77008B7ED3 /* C4-MySkin.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A9F6610D302BB82F008F97CE /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

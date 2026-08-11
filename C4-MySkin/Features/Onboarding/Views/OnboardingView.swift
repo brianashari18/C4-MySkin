@@ -45,19 +45,15 @@ struct OnboardingView: View {
                         name: viewModel.trimmedName,
                         action: viewModel.advance
                     )
-                case .skinType:
-                    SkinTypeScreen(
-                        selectedSkinType: viewModel.personalization.skinType,
-                        onSelect: viewModel.selectSkinType
-                    )
-                case .skinSensitivity:
-                    SkinSensitivityScreen(
-                        selectedSensitivity: viewModel.personalization.skinSensitivity,
-                        onSelect: viewModel.selectSkinSensitivity,
-                        onStart: viewModel.finishOnboarding
+                case .personalization:
+                    PersonalizationView(
+                        initialPersonalization: viewModel.personalization,
+                        allowsAssessment: false,
+                        allowsSkinTypeAssessment: true,
+                        onComplete: viewModel.completePersonalization
                     )
                 case .mainPage:
-                    MainPlaceholderView(name: viewModel.trimmedName)
+                    MainPlaceholderView(personalization: viewModel.personalization)
                 }
             }
         }
@@ -430,96 +426,31 @@ private struct PersonalizationIntroScreen: View {
     }
 }
 
-private struct SkinTypeScreen: View {
-    let selectedSkinType: SkinType?
-    let onSelect: (SkinType) -> Void
-
-    var body: some View {
-        VStack(spacing: 32) {
-            OnboardingTitleText(text: "Apa tipe kulit wajah kamu?", size: 20, alignment: .center)
-                .frame(maxWidth: .infinity)
-
-            VStack(spacing: 28) {
-                ForEach(SkinType.allCases) { skinType in
-                    OnboardingOptionButton(
-                        title: skinType.rawValue,
-                        isSelected: selectedSkinType == skinType,
-                        fontSize: 18,
-                        height: 44
-                    ) {
-                        onSelect(skinType)
-                    }
-                    .frame(maxWidth: 275)
-                }
-            }
-            .frame(maxWidth: .infinity)
-
-            Spacer()
-
-            MascotLottieView(animation: .idle)
-                .frame(width: 450, height: 450)
-                .scaleEffect(1.10)
-                .offset(y: 10)
-                .frame(height: 300)
-                .clipped()
-                .allowsHitTesting(false)
-        }
-        .padding(.horizontal, 56)
-        .padding(.top, 176)
-        .padding(.bottom, 0)
-    }
-}
-
-private struct SkinSensitivityScreen: View {
-    let selectedSensitivity: SkinSensitivity?
-    let onSelect: (SkinSensitivity) -> Void
-    let onStart: () -> Void
-
-    var body: some View {
-        VStack(spacing: 32) {
-            OnboardingTitleText(text: "Bagaimana sensitivitas\nkulit wajah kamu?", size: 20, alignment: .center)
-                .frame(maxWidth: .infinity)
-
-            VStack(spacing: 28) {
-                ForEach(SkinSensitivity.allCases) { sensitivity in
-                    OnboardingOptionButton(
-                        title: sensitivity.rawValue,
-                        isSelected: selectedSensitivity == sensitivity,
-                        fontSize: 18,
-                        height: 44
-                    ) {
-                        onSelect(sensitivity)
-                    }
-                    .frame(maxWidth: 275)
-                }
-            }
-            .frame(maxWidth: .infinity)
-
-            Spacer()
-
-            OnboardingBottomCTA(title: "Selesai", isEnabled: selectedSensitivity != nil, action: onStart)
-                .offset(y: OnboardingLayout.bottomOffsetY)
-        }
-        .padding(.horizontal, 56)
-        .padding(.top, 100)
-        .padding(.bottom, OnboardingLayout.bottomPadding)
-    }
-}
-
 private struct MainPlaceholderView: View {
-    let name: String
+    let personalization: OnboardingPersonalization
 
     var body: some View {
         VStack(spacing: 16) {
-            Text(name.isEmpty ? "Welcome" : "Welcome, \(name)")
+            Text(personalization.name.isEmpty ? "Welcome" : "Welcome, \(personalization.name)")
                 .font(OnboardingStyle.roundedFont(size: 24))
                 .foregroundStyle(OnboardingStyle.primaryBlue)
 
-            Text("Main Page")
+            Text(summaryText)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundStyle(OnboardingStyle.primaryBlue.opacity(0.75))
+                .multilineTextAlignment(.center)
         }
         .padding()
+    }
+
+    private var summaryText: String {
+        let skinType = personalization.skinType?.rawValue ?? "-"
+        let sensitivity = personalization.skinSensitivity?.rawValue ?? "-"
+        let concerns = personalization.skinConcerns.isEmpty
+            ? "Tidak ada"
+            : personalization.skinConcerns.map(\.rawValue).joined(separator: ", ")
+
+        return "Tipe: \(skinType)\nSensitivitas: \(sensitivity)\nConcern: \(concerns)"
     }
 }
 
