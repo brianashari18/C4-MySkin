@@ -11,7 +11,7 @@ import SwiftUI
 struct C4_MySkinApp: App {
     var body: some Scene {
         WindowGroup {
-            ProductHistoryView()
+            ProductValidationView()
         }
     }
 }

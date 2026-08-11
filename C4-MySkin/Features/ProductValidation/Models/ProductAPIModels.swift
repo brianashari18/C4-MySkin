@@ -66,12 +66,14 @@ struct ProductResolveResponse: Decodable {
     let query: String
     let strategy: String?
     let product: ProductResolvedItem?
+    let reason: String?
     let collectedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case query
         case strategy
         case product
+        case reason
         case collectedAt = "collected_at"
     }
 }
