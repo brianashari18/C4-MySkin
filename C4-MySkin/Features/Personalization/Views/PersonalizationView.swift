@@ -59,8 +59,8 @@ struct PersonalizationView: View {
 
                     if !finishesAfterSensitivity || viewModel.phase == .skinTypeSelection {
                         PersonalizationMascotFooter(
-                            noteText: "",
-                            showsNote: false,
+                            noteText: viewModel.mascotNoteText,
+                            showsNote: !finishesAfterSensitivity && !viewModel.phase.isResult,
                             mascotAnimation: finishesAfterSensitivity ? .idle : .peekHead
                         )
                         .id(viewModel.phase)
@@ -164,6 +164,12 @@ struct PersonalizationView: View {
                 onComplete(viewModel.result)
             }
         }
+    }
+}
+
+private extension PersonalizationPhase {
+    var isResult: Bool {
+        self == .skinTypeResult || self == .skinSensitivityResult || self == .summary
     }
 }
 
