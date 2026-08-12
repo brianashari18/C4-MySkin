@@ -81,6 +81,7 @@ struct PersonalizationView: View {
             .opacity(viewModel.phase.showsSideNavigation && !finishesAfterSensitivity ? 1 : 0)
             .allowsHitTesting(viewModel.phase.showsSideNavigation && !finishesAfterSensitivity)
         }
+        .navigationBarBackButtonHidden(true)
         .contentShape(Rectangle())
         .onTapGesture {
             if viewModel.phase == .summary {
@@ -204,7 +205,7 @@ private struct SkinTypeAssessmentContent: View {
             PersonalizationOptionList(options: viewModel.skinTypeQuestion.options) { option in
                 OnboardingOptionButton(
                     title: option.title,
-                    isSelected: viewModel.selectedSkinTypeOption == option,
+                    isSelected: viewModel.selectedSkinTypeOption?.title == option.title,
                     fontSize: 14,
                     height: 46
                 ) {

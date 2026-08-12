@@ -25,6 +25,7 @@ final class PersonalizationViewModel {
     private let allowsSensitivityAssessment: Bool
     private let stopsAtSensitivitySelection: Bool
     private var skinTypeScores: [SkinTypeQuestionGroup: Int] = [:]
+    private var skinTypeSelectedOptions: [Int: PersonalizationOption] = [:]
     private var sensitivityAnswers: [Double] = []
     private var noConcernPageIndexes: Set<Int> = []
 
@@ -63,6 +64,7 @@ final class PersonalizationViewModel {
         isNoConcernSelectedForCurrentPage ||
             concernPage.concerns.contains { selectedConcerns.contains($0) }
     }
+
     var mascotNoteText: String {
         guard phase == .skinTypeAssessment || phase == .skinTypeConfirmation || phase == .skinSensitivityAssessment || phase == .skinConcern else {
             return "Gapapa kok kalau belum yakin"
@@ -186,6 +188,7 @@ final class PersonalizationViewModel {
             return
         }
         selectedSkinType = skinType
+        saveToSwiftData()
         phase = .skinSensitivitySelection
     }
 
@@ -195,6 +198,7 @@ final class PersonalizationViewModel {
             return
         }
         selectedSkinSensitivity = skinSensitivity
+        saveToSwiftData()
         if stopsAtSensitivitySelection {
             phase = .skinSensitivitySelection
             return
@@ -205,10 +209,26 @@ final class PersonalizationViewModel {
 
     func selectSkinTypeOption(_ option: PersonalizationOption) {
         selectedSkinTypeOption = option
+
+        let group = PersonalizationContent.skinTypeQuestions[skinTypeQuestionIndex].group
+        skinTypeScores[group] = option.score
+        skinTypeSelectedOptions[skinTypeQuestionIndex] = option
+
+        // Auto-advance to next question or confirmation step
+        if skinTypeQuestionIndex < PersonalizationContent.skinTypeQuestions.count - 1 {
+            skinTypeQuestionIndex += 1
+            selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
+        } else {
+            // All 7 questions answered — calculate result
+            selectedSkinType = calculateSkinType()
+            saveToSwiftData()
+            phase = .skinTypeConfirmation
+        }
     }
 
     func selectConfirmedSkinType(_ skinType: SkinType) {
         selectedSkinType = skinType
+        saveToSwiftData()
         phase = .skinTypeResult
     }
 
@@ -220,10 +240,11 @@ final class PersonalizationViewModel {
         // Store score keyed by question group
         let group = PersonalizationContent.skinTypeQuestions[skinTypeQuestionIndex].group
         skinTypeScores[group] = selectedSkinTypeOption.score
-        self.selectedSkinTypeOption = nil
+        skinTypeSelectedOptions[skinTypeQuestionIndex] = selectedSkinTypeOption
 
         if skinTypeQuestionIndex < PersonalizationContent.skinTypeQuestions.count - 1 {
             skinTypeQuestionIndex += 1
+            self.selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
         } else {
             // All 7 questions answered — calculate result
             selectedSkinType = calculateSkinType()
@@ -336,18 +357,17 @@ final class PersonalizationViewModel {
         case .skinTypeAssessment:
             if skinTypeQuestionIndex > 0 {
                 skinTypeQuestionIndex -= 1
-                let group = PersonalizationContent.skinTypeQuestions[skinTypeQuestionIndex].group
-                selectedSkinTypeOption = skinTypeScores[group].map { PersonalizationOption(title: "", score: $0) }
+                selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
             } else {
                 phase = .skinTypeSelection
                 selectedSkinTypeOption = nil
                 skinTypeScores.removeAll()
+                skinTypeSelectedOptions.removeAll()
             }
         case .skinTypeConfirmation:
             phase = .skinTypeAssessment
             skinTypeQuestionIndex = PersonalizationContent.skinTypeQuestions.count - 1
-            let group = PersonalizationContent.skinTypeQuestions[skinTypeQuestionIndex].group
-            selectedSkinTypeOption = skinTypeScores[group].map { PersonalizationOption(title: "", score: $0) }
+            selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
         case .skinTypeResult:
             phase = .skinTypeConfirmation
         case .skinSensitivitySelection:
@@ -390,6 +410,7 @@ final class PersonalizationViewModel {
     private func startSkinTypeAssessment() {
         skinTypeQuestionIndex = 0
         skinTypeScores.removeAll()
+        skinTypeSelectedOptions.removeAll()
         selectedSkinTypeOption = nil
         phase = .skinTypeAssessment
     }

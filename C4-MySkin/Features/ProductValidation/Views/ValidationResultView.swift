@@ -318,7 +318,7 @@ struct ValidationResultView: View {
         }
     }
 
-    // MARK: - 2. Ingredients Section (with ✓ / ✗, row alignment, View More, and Tappable Sheet)
+    // MARK: - 2. Ingredients Section (with ✓ / ✗, row alignment, and View More)
 
     @ViewBuilder
     private func ingredientsSingleCard(result: ValidationResult) -> some View {
@@ -328,20 +328,12 @@ struct ValidationResultView: View {
         ValidationCardView(title: "Ingredients") {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(visibleChecks) { item in
-                    Button {
-                        viewModel.inspectIngredient(name: item.name)
-                    } label: {
-                        HStack {
-                            Text(item.name)
-                                .font(Font.App.nunitoRounded(size: 14, weight: .medium))
-                                .foregroundStyle(Color.App.darkBlue)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(Color.gray.opacity(0.6))
-                        }
+                    HStack {
+                        Text(item.name)
+                            .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                            .foregroundStyle(Color.App.darkBlue)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
                 }
 
                 if result.ingredientChecks.count > displayLimit {
@@ -385,22 +377,15 @@ struct ValidationResultView: View {
                             let isPresentInFirst = set1.contains(name.lowercased())
                             let isMatchInBoth = isPresentInFirst && set2.contains(name.lowercased())
 
-                            Button {
-                                viewModel.inspectIngredient(name: name)
-                            } label: {
-                                HStack {
-                                    Text(name)
-                                        .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
-                                        .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.6)))
-                                    Spacer()
-                                    Image(systemName: isPresentInFirst ? "checkmark" : "xmark")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.4))
-                                }
-                                .background(isMatchInBoth ? Color.gray.opacity(0.12) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                            HStack {
+                                Text(name)
+                                    .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
+                                    .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.6)))
+                                Spacer()
+                                Image(systemName: isPresentInFirst ? "checkmark" : "xmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.4))
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 12)
@@ -416,22 +401,15 @@ struct ValidationResultView: View {
                             let isPresentInSecond = set2.contains(name.lowercased())
                             let isMatchInBoth = isPresentInSecond && set1.contains(name.lowercased())
 
-                            Button {
-                                viewModel.inspectIngredient(name: name)
-                            } label: {
-                                HStack {
-                                    Text(name)
-                                        .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
-                                        .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.6)))
-                                    Spacer()
-                                    Image(systemName: isPresentInSecond ? "checkmark" : "xmark")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.4))
-                                }
-                                .background(isMatchInBoth ? Color.gray.opacity(0.12) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                            HStack {
+                                Text(name)
+                                    .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
+                                    .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.6)))
+                                Spacer()
+                                Image(systemName: isPresentInSecond ? "checkmark" : "xmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.4))
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 12)
@@ -496,21 +474,44 @@ struct ValidationResultView: View {
         return isIngredientsExpanded ? masterNames : Array(masterNames.prefix(displayLimit))
     }
 
-    // MARK: - 3. Key Ingredients Section (with Best For)
+    // MARK: - 3. Key Ingredients Section (with Clickable Slate Blue Capsule Pills & Chevron)
 
     @ViewBuilder
     private func keyIngredientsSingleCard(result: ValidationResult) -> some View {
         ValidationCardView(title: "Key Ingredients") {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(result.keyIngredientItems) { item in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.name)
-                            .font(Font.App.nunitoRounded(size: 14, weight: .bold))
-                            .foregroundStyle(Color.App.darkBlue)
-                        Text(item.description)
-                            .font(Font.App.nunitoRounded(size: 12, weight: .medium))
-                            .foregroundStyle(Color.gray)
+                    Button {
+                        viewModel.inspectIngredient(name: item.name)
+                    } label: {
+                        HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name)
+                                    .font(Font.App.nunitoRounded(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+
+                                if !item.description.isEmpty {
+                                    Text(item.description)
+                                        .font(Font.App.nunitoRounded(size: 11, weight: .medium))
+                                        .foregroundStyle(Color.white.opacity(0.85))
+                                        .multilineTextAlignment(.leading)
+                                }
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 67/255, green: 109/255, blue: 150/255))
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if !result.bestForSummary.isEmpty {
@@ -534,16 +535,42 @@ struct ValidationResultView: View {
         ValidationCardView(title: "Key Ingredients") {
             HStack(alignment: .top, spacing: 0) {
                 // Product 1 Column
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(first.keyIngredientItems) { item in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.darkBlue)
-                            Text(item.description)
-                                .font(Font.App.nunitoRounded(size: 11, weight: .medium))
-                                .foregroundStyle(Color.gray)
+                        Button {
+                            viewModel.inspectIngredient(name: item.name)
+                        } label: {
+                            HStack(alignment: .center, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(item.name)
+                                        .font(Font.App.nunitoRounded(size: 12, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
+
+                                    if !item.description.isEmpty {
+                                        Text(item.description)
+                                            .font(Font.App.nunitoRounded(size: 10, weight: .medium))
+                                            .foregroundStyle(Color.white.opacity(0.80))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.85)
+                                    }
+                                }
+
+                                Spacer(minLength: 2)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 67/255, green: 109/255, blue: 150/255))
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
 
                     if !first.bestForSummary.isEmpty {
@@ -558,7 +585,7 @@ struct ValidationResultView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Rectangle()
@@ -566,16 +593,42 @@ struct ValidationResultView: View {
                     .frame(width: 1.5)
 
                 // Product 2 Column
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(second.keyIngredientItems) { item in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.darkBlue)
-                            Text(item.description)
-                                .font(Font.App.nunitoRounded(size: 11, weight: .medium))
-                                .foregroundStyle(Color.gray)
+                        Button {
+                            viewModel.inspectIngredient(name: item.name)
+                        } label: {
+                            HStack(alignment: .center, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(item.name)
+                                        .font(Font.App.nunitoRounded(size: 12, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
+
+                                    if !item.description.isEmpty {
+                                        Text(item.description)
+                                            .font(Font.App.nunitoRounded(size: 10, weight: .medium))
+                                            .foregroundStyle(Color.white.opacity(0.80))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.85)
+                                    }
+                                }
+
+                                Spacer(minLength: 2)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 67/255, green: 109/255, blue: 150/255))
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
 
                     if !second.bestForSummary.isEmpty {
@@ -590,7 +643,7 @@ struct ValidationResultView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
