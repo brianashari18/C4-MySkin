@@ -12,11 +12,21 @@ struct JourneyDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let journey: SkincareJourney
     let hideProgressBar: Bool
+    let onSkipToMilestoneOne: () -> Void
+    let onSkipToMilestoneTwo: () -> Void
     @State private var selectedIndex: Int
 
-    init(journey: SkincareJourney, initialIndex: Int? = nil, hideProgressBar: Bool = false) {
+    init(
+        journey: SkincareJourney,
+        initialIndex: Int? = nil,
+        hideProgressBar: Bool = false,
+        onSkipToMilestoneOne: @escaping () -> Void = {},
+        onSkipToMilestoneTwo: @escaping () -> Void = {}
+    ) {
         self.journey = journey
         self.hideProgressBar = hideProgressBar
+        self.onSkipToMilestoneOne = onSkipToMilestoneOne
+        self.onSkipToMilestoneTwo = onSkipToMilestoneTwo
         let defaultIndex = max(0, journey.journalEntries.count - 1)
         _selectedIndex = State(initialValue: initialIndex ?? defaultIndex)
     }
@@ -45,6 +55,7 @@ struct JourneyDetailView: View {
 
     var body: some View {
         ZStack {
+            // Soft ice blue background gradient
             LinearGradient(
                 colors: [
                     Color(red: 0.94, green: 0.97, blue: 1.0),
@@ -63,6 +74,10 @@ struct JourneyDetailView: View {
                             dismiss()
                         }
                         Spacer()
+
+                        if DemoConfiguration.isEnabled {
+                            demoSkipButtons
+                        }
                     }
 
                     Text("Milestone #\(currentMilestoneOrder)")
@@ -73,6 +88,7 @@ struct JourneyDetailView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
+                        // Timeline Progress Indicator Bar (hidden when opened from calendar view)
                         if !hideProgressBar {
                             JournalTimelineHeader(
                                 milestoneNumber: currentMilestoneOrder,
@@ -222,29 +238,52 @@ struct JourneyDetailView: View {
         .navigationBarBackButtonHidden(true)
     }
 
+    private var demoSkipButtons: some View {
+        HStack(spacing: 8) {
+            demoSkipButton(
+                title: "To M1",
+                foregroundColor: .white,
+                backgroundColor: OnboardingStyle.buttonBlue,
+                action: onSkipToMilestoneOne
+            )
+
+            demoSkipButton(
+                title: "To M2",
+                foregroundColor: OnboardingStyle.primaryBlue,
+                backgroundColor: OnboardingStyle.noteYellow,
+                action: onSkipToMilestoneTwo
+            )
+        }
+    }
+
+    private func demoSkipButton(
+        title: String,
+        foregroundColor: Color,
+        backgroundColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(foregroundColor)
+                .padding(.horizontal, 12)
+                .frame(height: 30)
+                .background(backgroundColor)
+                .clipShape(Capsule())
+                .overlay {
+                    Capsule()
+                        .strokeBorder(OnboardingStyle.primaryBlue, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Skip to \(title == "To M1" ? "Milestone 1" : "Milestone 2") completion")
+    }
+
     private var currentMilestoneOrder: Int {
         journey.milestones.first { !$0.isCompleted }?.order ?? 1
-    }
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "id_ID")
-        formatter.dateFormat = "dd MMMM yyyy"
-        return formatter.string(from: date)
-    }
-
-    private func summaryRow(label: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: 24) {
-            Text(label)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
-                .frame(width: 140, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 }
 
@@ -287,6 +326,7 @@ private struct YellowRuledPaperReadOnlyBox: View {
     }
 }
 
+// MARK: - Journal Timeline Header Component (Interaktif per Flag)
 private struct JournalTimelineHeader: View {
     let milestoneNumber: Int
     let totalEntries: Int
@@ -305,6 +345,7 @@ private struct JournalTimelineHeader: View {
     var body: some View {
         VStack(spacing: 4) {
             ZStack {
+                // Background Progress Bar Slider Track
                 GeometryReader { geometry in
                     let totalWidth = geometry.size.width
                     let fillWidth = totalWidth * progressRatio
@@ -333,19 +374,21 @@ private struct JournalTimelineHeader: View {
                 }
                 .padding(.horizontal, 16)
 
+                // Timeline Icon Nodes (Clickable Flag Buttons)
                 HStack {
                     ForEach(0..<nodeCount, id: \.self) { nodeIndex in
                         let iconName = nodeIndex == 0 ? "jar.fill" : "flag.fill"
                         let isSelected = nodeIndex == selectedIndex
                         let isAvailable = nodeIndex < totalEntries
 
-                        Button {
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        Button(action: {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
                             let targetIndex = min(nodeIndex, max(0, totalEntries - 1))
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 selectedIndex = targetIndex
                             }
-                        } label: {
+                        }) {
                             CircleIconNode(
                                 iconName: iconName,
                                 isSelected: isSelected,
@@ -354,7 +397,9 @@ private struct JournalTimelineHeader: View {
                         }
                         .buttonStyle(.plain)
 
-                        if nodeIndex < nodeCount - 1 { Spacer() }
+                        if nodeIndex < nodeCount - 1 {
+                            Spacer()
+                        }
                     }
                 }
                 .padding(.horizontal, 12)
@@ -376,9 +421,7 @@ private struct CircleIconNode: View {
                 .fill(
                     isSelected
                         ? Color(red: 0.16, green: 0.35, blue: 0.54)
-                        : (isAvailable
-                            ? Color(red: 0.74, green: 0.83, blue: 0.93)
-                            : Color(red: 0.88, green: 0.90, blue: 0.93))
+                        : (isAvailable ? Color(red: 0.74, green: 0.83, blue: 0.93) : Color(red: 0.88, green: 0.90, blue: 0.93))
                 )
                 .frame(width: isSelected ? 36 : 30, height: isSelected ? 36 : 30)
 
@@ -393,9 +436,7 @@ private struct CircleIconNode: View {
                 .foregroundStyle(
                     isSelected
                         ? Color.white
-                        : (isAvailable
-                            ? Color(red: 0.16, green: 0.35, blue: 0.54)
-                            : Color(red: 0.60, green: 0.68, blue: 0.76))
+                        : (isAvailable ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.60, green: 0.68, blue: 0.76))
                 )
         }
         .frame(width: 42, height: 42)

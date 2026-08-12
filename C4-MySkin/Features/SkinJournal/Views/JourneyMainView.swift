@@ -6,8 +6,12 @@
 import SwiftUI
 
 struct JourneyMainView: View {
+    private let contentHorizontalPadding: CGFloat = 32
+
     @Environment(\.dismiss) private var dismiss
     @State private var showNoJourneyPrompt = false
+    @State private var showLockedMilestonePrompt = false
+    @State private var lockedMilestoneFrame: CGRect = .zero
 
     let journey: SkincareJourney
     let isJourneyActive: Bool
@@ -80,23 +84,27 @@ struct JourneyMainView: View {
                         // Photo box: empty state placeholder ("no photos yet") vs captured photo / timelapse
                         if journey.progressPhotos.isEmpty {
                             ProgressPhotoCard(imageName: nil)
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, contentHorizontalPadding)
                                 .padding(.top, 16)
                         } else {
                             PhotoTimelapseCard(
                                 photos: journey.progressPhotos,
                                 productName: journey.product.name
                             )
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, contentHorizontalPadding)
                             .padding(.top, 16)
                         }
 
                         // Middle Container: Milestone Card (bila foto sudah di-capture atau journey aktif) vs AddSkincareJourneyCard (bila awal)
                         let isMilestoneActive = isJourneyActive || !journey.progressPhotos.isEmpty
                         if isMilestoneActive {
+                            if !journey.journalEntries.isEmpty {
+                                updateSkinConditionSection
+                            }
+
                             Divider()
                                 .background(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.3))
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, contentHorizontalPadding)
                                 .padding(.top, 8)
 
                             if !journey.journalEntries.isEmpty {
@@ -110,7 +118,7 @@ struct JourneyMainView: View {
                                         .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, contentHorizontalPadding)
                             }
 
                             VStack(spacing: 16) {
@@ -127,11 +135,29 @@ struct JourneyMainView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                            if !journey.journalEntries.isEmpty {
-                                UpcomingMilestoneCard(milestoneNumber: 2, startDate: journey.startDate)
+                                if !journey.journalEntries.isEmpty && currentMilestoneOrder == 1 {
+                                    Button {
+                                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                        withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+                                            showLockedMilestonePrompt = true
+                                        }
+                                    } label: {
+                                        UpcomingMilestoneCard(milestoneNumber: 2, startDate: journey.startDate)
+                                            .contentShape(RoundedRectangle(cornerRadius: 24))
+                                            .background {
+                                                GeometryReader { geometry in
+                                                    Color.clear.preference(
+                                                        key: LockedMilestoneFrameKey.self,
+                                                        value: geometry.frame(in: .named("journeyMain"))
+                                                    )
+                                                }
+                                            }
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Milestone 2, still locked")
+                                }
                             }
-                            }
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, contentHorizontalPadding)
                         } else {
                             // Empty / Initial state: container kuning "add your skincare journey"
                             VStack(spacing: 16) {
@@ -142,7 +168,7 @@ struct JourneyMainView: View {
                                         .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
                             }
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, contentHorizontalPadding)
                             .padding(.top, 8)
                         }
 
@@ -175,7 +201,7 @@ struct JourneyMainView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(!isMilestoneActive)
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, contentHorizontalPadding)
                             .padding(.top, 8)
                         }
 
@@ -183,12 +209,89 @@ struct JourneyMainView: View {
                     }
                 }
             }
+
+            if showLockedMilestonePrompt {
+                VStack {
+                    Spacer()
+                    LockedMilestoneToast()
+                        .padding(.horizontal, contentHorizontalPadding)
+                        .padding(.bottom, 24)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                .zIndex(10)
+                .allowsHitTesting(false)
+            }
         }
+        .coordinateSpace(name: "journeyMain")
+        .onPreferenceChange(LockedMilestoneFrameKey.self) { frame in
+            lockedMilestoneFrame = frame
+        }
+        .simultaneousGesture(
+            SpatialTapGesture().onEnded { value in
+                guard showLockedMilestonePrompt,
+                      !lockedMilestoneFrame.contains(value.location) else { return }
+                withAnimation(.easeOut(duration: 0.25)) {
+                    showLockedMilestonePrompt = false
+                }
+            }
+        )
         .navigationBarBackButtonHidden(true)
+    }
+
+    private var updateSkinConditionSection: some View {
+        VStack(spacing: 8) {
+            Button {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                onAddImage()
+            } label: {
+                Text("Update Skin Condition")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color(red: 0.38, green: 0.61, blue: 0.93))
+                    .clipShape(Capsule())
+                    .shadow(
+                        color: Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.28),
+                        radius: 6,
+                        x: 0,
+                        y: 3
+                    )
+            }
+            .buttonStyle(.plain)
+
+            HStack(alignment: .bottom, spacing: -22) {
+                OnboardingMascotLottieView(animation: .peekHead)
+                    .frame(width: 105, height: 82)
+                    .scaleEffect(0.35)
+                    .zIndex(2)
+                    .accessibilityHidden(true)
+
+                SpeechBubbleView(
+                    text: "You can update your skin\ncondition everyday!",
+                    maxWidth: 200
+                )
+                .scaleEffect(0.88, anchor: .bottomLeading)
+                .offset(y: -30)
+                .zIndex(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 16)
+            .padding(.top, 30)
+        }
+        .padding(.horizontal, contentHorizontalPadding)
     }
 
     private var currentMilestoneOrder: Int {
         journey.milestones.first { !$0.isCompleted }?.order ?? 1
+    }
+}
+
+private struct LockedMilestoneFrameKey: PreferenceKey {
+    static let defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
@@ -251,88 +354,54 @@ private struct NoJourneyToastCard: View {
     }
 }
 
+private struct LockedMilestoneToast: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Milestone 2 is still locked")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+
+            Text("Keep going on the Milestone 1")
+                .font(.system(size: 17, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.95))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 24)
+        .background(Color(red: 0.32, green: 0.32, blue: 0.32))
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 // MARK: - Upcoming / Locked Milestone Card (Milestone #2 - 4 Flags)
 private struct UpcomingMilestoneCard: View {
     let milestoneNumber: Int
     var startDate: Date = Date()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // 1. "Upcoming" Badge Pill
-            Text("Upcoming")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(Color(red: 0.55, green: 0.62, blue: 0.70))
-                .clipShape(Capsule())
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Text("Upcoming")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 4)
+                    .background(Color(red: 0.45, green: 0.48, blue: 0.52))
+                    .clipShape(Capsule())
 
-            // 2. Milestone Title (Muted Dark Gray)
-            Text("Milestone #\(milestoneNumber)")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color(red: 0.35, green: 0.42, blue: 0.50))
-
-            // 3. Timeline Layout: 4 Flags (Start: +2 minggu dari M1 start, Finish: in 8 weeks)
-            HStack(alignment: .top, spacing: 4) {
-                // Jar icon node (gray)
-                VStack(spacing: 4) {
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.65, green: 0.72, blue: 0.80))
-                            .frame(width: 44, height: 44)
-
-                        Image(systemName: "jar.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(Color.white)
-                    }
-
-                    VStack(spacing: 1) {
-                        Text("Start")
-                            .font(.system(size: 12, weight: .bold))
-                        Text(formattedDate(startDate.addingTimeInterval(14 * 86400)))
-                            .font(.system(size: 10, weight: .semibold))
-                    }
-                    .foregroundStyle(Color(red: 0.55, green: 0.62, blue: 0.70))
-                }
+                Text("Milestone #\(milestoneNumber)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color(red: 0.35, green: 0.37, blue: 0.40))
 
                 Spacer(minLength: 0)
-
-                ForEach(1...4, id: \.self) { flagIndex in
-                    HStack(spacing: 3) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            RoundedRectangle(cornerRadius: 1.5)
-                                .fill(Color(red: 0.78, green: 0.83, blue: 0.90))
-                                .frame(width: 8, height: 4)
-                        }
-                    }
-                    .frame(height: 44)
-
-                    Spacer(minLength: 0)
-
-                    VStack(spacing: 4) {
-                        Image(systemName: "flag.fill")
-                            .font(.system(size: 26))
-                            .foregroundStyle(Color(red: 0.65, green: 0.72, blue: 0.80))
-                            .frame(height: 44)
-
-                        if flagIndex == 4 {
-                            VStack(spacing: 1) {
-                                Text("Results")
-                                    .font(.system(size: 12, weight: .bold))
-                                Text("in 8 weeks")
-                                    .font(.system(size: 10, weight: .semibold))
-                            }
-                            .foregroundStyle(Color(red: 0.55, green: 0.62, blue: 0.70))
-                        }
-                    }
-
-                    if flagIndex < 4 {
-                        Spacer(minLength: 0)
-                    }
-                }
             }
+
+            responsiveTimeline
         }
-        .padding(18)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
         .frame(height: 195) // SAKLAK: 195pt identik dengan Milestone 1
         .background(
@@ -340,6 +409,65 @@ private struct UpcomingMilestoneCard: View {
                 .fill(Color(red: 0.88, green: 0.90, blue: 0.93))
                 .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    /// Lima node dibagi dari lebar aktual kartu. Tidak ada intrinsic-width
+    /// HStack yang dapat memaksa parent ScrollView menjadi lebih lebar.
+    private var responsiveTimeline: some View {
+        GeometryReader { geometry in
+            let nodeCount = 5
+            let nodeWidth = geometry.size.width / CGFloat(nodeCount)
+
+            ZStack(alignment: .topLeading) {
+                Path { path in
+                    path.move(to: CGPoint(x: nodeWidth / 2, y: 20))
+                    path.addLine(to: CGPoint(x: geometry.size.width - nodeWidth / 2, y: 20))
+                }
+                .stroke(
+                    Color(red: 0.63, green: 0.65, blue: 0.68),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [7, 6])
+                )
+
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(0..<nodeCount, id: \.self) { index in
+                        VStack(spacing: 5) {
+                            if index == 0 {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(red: 0.56, green: 0.58, blue: 0.61))
+                                    Image(systemName: "jar.fill")
+                                        .font(.system(size: 17))
+                                        .foregroundStyle(.white)
+                                }
+                                .frame(width: 40, height: 40)
+                            } else {
+                                Image(systemName: "flag.fill")
+                                    .font(.system(size: 23))
+                                    .foregroundStyle(Color(red: 0.56, green: 0.58, blue: 0.61))
+                                    .frame(width: 40, height: 40)
+                            }
+
+                            if index == 0 {
+                                Text("Start\n\(formattedDate(startDate.addingTimeInterval(14 * 86400)))")
+                                    .font(.system(size: 9, weight: .semibold))
+                            } else if index == nodeCount - 1 {
+                                Text("Results\nin 8 weeks")
+                                    .font(.system(size: 9, weight: .semibold))
+                            }
+                        }
+                        .foregroundStyle(Color(red: 0.43, green: 0.45, blue: 0.48))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.75)
+                        .frame(width: nodeWidth)
+                    }
+                }
+            }
+        }
+        .frame(height: 72)
+        .blur(radius: 2.5)
+        .accessibilityHidden(true)
     }
 
     private func formattedDate(_ date: Date) -> String {
@@ -481,5 +609,3 @@ private extension SkincareJourney {
         isJourneyActive: true
     )
 }
-
-
