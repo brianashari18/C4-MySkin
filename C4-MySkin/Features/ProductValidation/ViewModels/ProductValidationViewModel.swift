@@ -194,6 +194,19 @@ final class ProductValidationViewModel: ObservableObject {
         isSearching = false
     }
 
+    private func getProductDossierWithProfile(slug: String) async throws -> ProductDossierResponse {
+        let profile = AppDataService.shared.fetchOrCreateProfile()
+        return try await apiClient.getProductDossier(
+            slug: slug,
+            enrich: true,
+            skinType: profile.skinTypeRaw,
+            skinSensitivity: profile.skinSensitivityRaw,
+            concernAcnePore: nil,
+            concernSkinTone: nil,
+            concernSunDamage: nil
+        )
+    }
+
     private func fetchProducts(for query: String) async throws -> [ProductSearchItem] {
         let response = try await apiClient.searchProducts(query: query)
         return try await enrichProducts(response.results)
@@ -219,7 +232,7 @@ final class ProductValidationViewModel: ObservableObject {
                     }
 
                     do {
-                        let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+                        let dossier = try await self.getProductDossierWithProfile(slug: slug)
                         return ProductSearchItem(
                             name: name,
                             brand: brand ?? dossier.product.brand,
@@ -257,7 +270,7 @@ final class ProductValidationViewModel: ObservableObject {
         searchErrorMessage = nil
 
         do {
-            let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+            let dossier = try await getProductDossierWithProfile(slug: slug)
             let result = ValidationResult(dossier: dossier)
 
             if validationResult == nil {
@@ -294,7 +307,7 @@ final class ProductValidationViewModel: ObservableObject {
         do {
             let resolveResponse = try await apiClient.resolveProduct(query: trimmed)
             if let resolvedProduct = resolveResponse.product, let slug = resolvedProduct.slug {
-                let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+                let dossier = try await getProductDossierWithProfile(slug: slug)
                 let result = ValidationResult(dossier: dossier)
 
                 if validationResult == nil {
