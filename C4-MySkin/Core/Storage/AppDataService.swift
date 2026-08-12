@@ -55,6 +55,17 @@ final class AppDataService {
         try? modelContext.save()
     }
 
+    func markPersonalizationCompleted() {
+        let profile = fetchOrCreateProfile()
+        profile.hasCompletedPersonalization = true
+        try? modelContext.save()
+    }
+
+    var hasCompletedPersonalization: Bool {
+        let profile = fetchOrCreateProfile()
+        return profile.hasCompletedPersonalization
+    }
+
     func updateOnboarding(name: String, skinType: SkinType?, skinSensitivity: SkinSensitivity?) {
         let profile = fetchOrCreateProfile()
         profile.name = name

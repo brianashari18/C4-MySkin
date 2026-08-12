@@ -23,10 +23,29 @@ final class ProductHistoryStore: ObservableObject {
         loadData()
     }
 
+    // MARK: - Check & Toggle Picked Product
+    func isPicked(name: String, brand: String) -> Bool {
+        pickedProducts.contains(where: { $0.name == name && $0.brand == brand })
+    }
+
+    func togglePickedProduct(_ item: PickedProductItem) {
+        if let index = pickedProducts.firstIndex(where: { $0.name == item.name && $0.brand == item.brand }) {
+            pickedProducts.remove(at: index)
+        } else {
+            pickedProducts.insert(item, at: 0)
+        }
+        persistPickedProducts()
+    }
+
+    func removePickedProduct(name: String, brand: String) {
+        pickedProducts.removeAll(where: { $0.name == name && $0.brand == brand })
+        persistPickedProducts()
+    }
+
     // MARK: - Save Picked Product
     func savePickedProduct(_ item: PickedProductItem) {
-        // Prevent duplicate consecutive entries
-        if let first = pickedProducts.first, first.name == item.name && first.brand == item.brand {
+        // Prevent duplicate entries
+        if isPicked(name: item.name, brand: item.brand) {
             return
         }
         pickedProducts.insert(item, at: 0)
