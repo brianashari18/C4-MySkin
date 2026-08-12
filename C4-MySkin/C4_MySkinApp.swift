@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct C4_MySkinApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var dataService = AppDataService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -19,5 +21,7 @@ struct C4_MySkinApp: App {
                 OnboardingView()
             }
         }
+        .modelContainer(dataService.modelContainer)
+        .environment(dataService)
     }
 }

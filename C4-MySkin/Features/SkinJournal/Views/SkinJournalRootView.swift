@@ -10,11 +10,17 @@ struct SkinJournalRootView: View {
     @State private var viewModel = SkinJournalRootViewModel(store: .shared)
     @State private var path = NavigationPath()
     @State private var selectedProduct: SkincareProduct?
+    @Environment(AppDataService.self) private var dataService
+
+    private var userProfile: UserProfile {
+        dataService.fetchOrCreateProfile()
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
             SkinJournalMainView(
                 journey: viewModel.latestJourney,
+                userName: userProfile.name.isEmpty ? "POLO" : userProfile.name,
                 onSkinJournaling: { path.append(SkinJournalRoute.mainJourney) },
                 onProductValidation: { path.append(SkinJournalRoute.productValidation) },
                 onProfile: { path.append(SkinJournalRoute.skinProfile) }
@@ -23,9 +29,9 @@ struct SkinJournalRootView: View {
                 switch route {
                 case .skinProfile:
                     SkinProfileView(
-                        userName: "POLO",
-                        skinType: "Dry",
-                        sensitivity: "Moderate",
+                        userName: userProfile.name.isEmpty ? "POLO" : userProfile.name,
+                        skinType: userProfile.skinTypeRaw ?? "Dry",
+                        sensitivity: userProfile.skinSensitivityRaw ?? "Moderate",
                         skinConcern: "_",
                         onRetakeTest: {
                             // Retake skin test action
