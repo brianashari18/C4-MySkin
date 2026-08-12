@@ -14,6 +14,7 @@ struct SkincareJourney: Identifiable, Codable {
     var milestones: [Milestone]
     var journalEntries: [JournalEntry]
     var progressPhotos: [ProgressPhoto]
+    var experienceRating: Int?
 
     init(
         id: UUID = UUID(),
@@ -21,7 +22,8 @@ struct SkincareJourney: Identifiable, Codable {
         startDate: Date = Date(),
         milestones: [Milestone] = Milestone.defaultMilestones,
         journalEntries: [JournalEntry] = [],
-        progressPhotos: [ProgressPhoto] = []
+        progressPhotos: [ProgressPhoto] = [],
+        experienceRating: Int? = nil
     ) {
         self.id = id
         self.product = product
@@ -29,6 +31,7 @@ struct SkincareJourney: Identifiable, Codable {
         self.milestones = milestones
         self.journalEntries = journalEntries
         self.progressPhotos = progressPhotos
+        self.experienceRating = experienceRating
     }
 }
 

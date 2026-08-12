@@ -12,11 +12,21 @@ struct JourneyDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let journey: SkincareJourney
     let hideProgressBar: Bool
+    let onSkipToMilestoneOne: () -> Void
+    let onSkipToMilestoneTwo: () -> Void
     @State private var selectedIndex: Int
 
-    init(journey: SkincareJourney, initialIndex: Int? = nil, hideProgressBar: Bool = false) {
+    init(
+        journey: SkincareJourney,
+        initialIndex: Int? = nil,
+        hideProgressBar: Bool = false,
+        onSkipToMilestoneOne: @escaping () -> Void = {},
+        onSkipToMilestoneTwo: @escaping () -> Void = {}
+    ) {
         self.journey = journey
         self.hideProgressBar = hideProgressBar
+        self.onSkipToMilestoneOne = onSkipToMilestoneOne
+        self.onSkipToMilestoneTwo = onSkipToMilestoneTwo
         let defaultIndex = max(0, journey.journalEntries.count - 1)
         _selectedIndex = State(initialValue: initialIndex ?? defaultIndex)
     }
@@ -64,6 +74,10 @@ struct JourneyDetailView: View {
                             dismiss()
                         }
                         Spacer()
+
+                        if DemoConfiguration.isEnabled {
+                            demoSkipButtons
+                        }
                     }
 
                     Text("Milestone #\(currentMilestoneOrder)")
@@ -222,6 +236,50 @@ struct JourneyDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+    }
+
+    private var demoSkipButtons: some View {
+        HStack(spacing: 8) {
+            demoSkipButton(
+                title: "To M1",
+                foregroundColor: .white,
+                backgroundColor: OnboardingStyle.buttonBlue,
+                action: onSkipToMilestoneOne
+            )
+
+            demoSkipButton(
+                title: "To M2",
+                foregroundColor: OnboardingStyle.primaryBlue,
+                backgroundColor: OnboardingStyle.noteYellow,
+                action: onSkipToMilestoneTwo
+            )
+        }
+    }
+
+    private func demoSkipButton(
+        title: String,
+        foregroundColor: Color,
+        backgroundColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            Text(title)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(foregroundColor)
+                .padding(.horizontal, 12)
+                .frame(height: 30)
+                .background(backgroundColor)
+                .clipShape(Capsule())
+                .overlay {
+                    Capsule()
+                        .strokeBorder(OnboardingStyle.primaryBlue, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Skip to \(title == "To M1" ? "Milestone 1" : "Milestone 2") completion")
     }
 
     private var currentMilestoneOrder: Int {

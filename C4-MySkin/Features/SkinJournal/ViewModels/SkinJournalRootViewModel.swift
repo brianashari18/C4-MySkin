@@ -4,6 +4,7 @@
 //
 
 import Observation
+import Foundation
 
 @MainActor
 @Observable
@@ -33,5 +34,19 @@ final class SkinJournalRootViewModel {
     func addJourney(_ journey: SkincareJourney) {
         store.addJourney(journey)
     }
-}
 
+    func archiveLatestJourney() {
+        store.archiveLatestJourney()
+    }
+
+    func finishLatestJourney(rating: Int) {
+        updateLatestJourney { journey in
+            journey.experienceRating = rating > 0 ? rating : nil
+        }
+        store.archiveLatestJourney()
+    }
+
+    func journey(id: UUID) -> SkincareJourney? {
+        store.journeys.first { $0.id == id }
+    }
+}

@@ -6,11 +6,25 @@
 import SwiftUI
 
 struct SkinJournalMainView: View {
+    private static let mascotWords = [
+        "Retinol and AHA are best used on alternate days.",
+        "Did you know? Salicylic Acid can help unclog pores.",
+        "Purging is different from a breakout!",
+        "Your skin needs time to adjust to a new product, too.",
+        "Hyaluronic Acid helps attract and retain moisture in the skin.",
+        "Salicylic Acid can help remove excess oil and buildup from pores.",
+        "The same ingredient can work differently depending on its concentration and formulation.",
+        "Consistency is usually more important than having a lot of products.",
+        "Centella Asiatica is often used to help soothe the skin.",
+        "Don’t forget, your skin can change over time."
+    ]
+
     let journey: SkincareJourney?
     let userName: String
     let onSkinJournaling: () -> Void
     let onProductValidation: () -> Void
     let onProfile: () -> Void
+    @State private var mascotWordIndex = Int.random(in: 0..<SkinJournalMainView.mascotWords.count)
 
     init(
         journey: SkincareJourney?,
@@ -44,15 +58,15 @@ struct SkinJournalMainView: View {
                 Spacer()
                 MascotLottieView(width: 600)
                     .accessibilityHidden(true)
-                    .offset(y: 180) // downward crop for dramatic effect
-                    .offset(x: -2) // downward crop for dramatic effect
+                    .offset(y: 230) // downward crop for dramatic effect
+                    .offset(x: -4) // downward crop for dramatic effect
             }
             .ignoresSafeArea(edges: .bottom)
 
             // Scrollable content on top
             VStack(spacing: 0) {
                 header
-                    .padding(.top, 50
+                    .padding(.top, 10
                     )
 
                 searchPrompt
@@ -75,21 +89,47 @@ struct SkinJournalMainView: View {
                 }
 
                 actionCircles
-                    .padding(.top, 20)
+                    .padding(.top, 10)
 
                 Spacer(minLength: 0)
+            }
 
-                // Speech bubble on the top-right of the mascot
+            // Overlay independen: perubahan tinggi bubble tidak mengubah layout
+            // mascot maupun konten utama. Titik bawah bubble tetap terkunci.
+            VStack {
+                Spacer()
                 HStack {
                     Spacer()
-                    SpeechBubbleView(text: "Purging berbeda\ndengan breakout\nloh !")
-                        .offset(y: 30)
+                    SpeechBubbleView(
+                        text: Self.mascotWords[mascotWordIndex],
+                        maxWidth: 150
+                    )
+                    .id(mascotWordIndex)
+                    .transition(.opacity)
                 }
                 .padding(.trailing, 24)
-                .padding(.bottom, 250)
+                .padding(.bottom, 200)
+                .offset(x:10)
             }
+            .allowsHitTesting(false)
+            .zIndex(2)
         }
         .ignoresSafeArea(edges: .bottom)
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { return }
+
+                var nextIndex = mascotWordIndex
+                while nextIndex == mascotWordIndex {
+                    nextIndex = Int.random(in: 0..<Self.mascotWords.count)
+                }
+
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    mascotWordIndex = nextIndex
+                }
+            }
+        }
     }
 
 
@@ -185,9 +225,6 @@ struct SkinJournalMainView: View {
         .padding(.horizontal, 20)
     }
 
-
-
-
     private func triggerHaptic() {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
@@ -207,7 +244,12 @@ private struct EmptyStateCard: View {
         .background(
             RoundedRectangle(cornerRadius: 22)
                 .fill(Color(red: 0.99, green: 0.90, blue: 0.66))
-                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                .shadow(
+                    color: Color(red: 0.16, green: 0.35, blue: 0.54).opacity(0.20),
+                    radius: 12,
+                    x: 0,
+                    y: 7
+                )
         )
         .padding(.bottom, 16) // samakan total tinggi dengan Active (195 + 16)
     }
@@ -601,5 +643,3 @@ private struct PressedButtonStyle: ButtonStyle {
         onProductValidation: {}
     )
 }
-
-

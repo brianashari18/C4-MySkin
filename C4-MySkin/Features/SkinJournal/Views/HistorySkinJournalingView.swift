@@ -91,14 +91,14 @@ struct HistorySkinJournalingView: View {
         formatter.dateFormat = "dd MMMM yyyy"
 
         let startStr = formatter.string(from: journey.startDate)
-        let endDate = journey.milestones.last?.completedDate ?? journey.startDate.addingTimeInterval(28 * 86400)
+        let endDate = journey.milestones.compactMap(\.completedDate).max() ?? journey.startDate
         let endStr = formatter.string(from: endDate)
 
         return HistoryItemData(
             dateRange: "\(startStr) - \(endStr)",
             productName: journey.product.name,
             brandName: journey.product.brand,
-            rating: (m1 && m2) ? 5 : (m1 ? 3 : 1),
+            rating: journey.experienceRating ?? ((m1 && m2) ? 5 : (m1 ? 3 : 1)),
             milestone1Completed: m1,
             milestone2Completed: m2,
             iconName: journey.product.iconName ?? "jar.fill"

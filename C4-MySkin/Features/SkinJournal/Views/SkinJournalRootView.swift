@@ -69,7 +69,7 @@ struct SkinJournalRootView: View {
                             path.append(SkinJournalRoute.chooseProduct(imageName: nil))
                         },
                         onViewDetail: {
-                            path.append(SkinJournalRoute.journeyDetail(hideProgressBar: false, initialIndex: nil))
+                            path.append(SkinJournalRoute.journeyDetail(journeyID: nil, hideProgressBar: false, initialIndex: nil))
                         },
                         onViewHistory: {
                             path.append(SkinJournalRoute.historyJournaling)
@@ -79,16 +79,24 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .journeyDetail(let hideProgressBar, let initialIndex):
-                    let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
-                    JourneyDetailView(journey: journey, initialIndex: initialIndex, hideProgressBar: hideProgressBar)
+                case .journeyDetail(let journeyID, let hideProgressBar, let initialIndex):
+                    let journey = journeyID.flatMap { viewModel.journey(id: $0) }
+                        ?? viewModel.latestJourney
+                        ?? SkincareJourney(product: SkincareProduct.samples[0])
+                    JourneyDetailView(
+                        journey: journey,
+                        initialIndex: initialIndex,
+                        hideProgressBar: hideProgressBar,
+                        onSkipToMilestoneOne: skipToMilestoneOneCompletion,
+                        onSkipToMilestoneTwo: skipToMilestoneTwoCompletion
+                    )
 
                 case .calendarJournaling:
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
                     SkinJournalCalendarView(
                         journey: journey,
                         onSelectDateEntry: { entry, entryIndex in
-                            path.append(SkinJournalRoute.journeyDetail(hideProgressBar: true, initialIndex: entryIndex))
+                            path.append(SkinJournalRoute.journeyDetail(journeyID: nil, hideProgressBar: true, initialIndex: entryIndex))
                         }
                     )
 
@@ -96,7 +104,11 @@ struct SkinJournalRootView: View {
                     HistorySkinJournalingView(
                         journeys: viewModel.journeys,
                         onSelectJourney: { selectedJourney in
-                            path.append(SkinJournalRoute.journeyDetail(hideProgressBar: false, initialIndex: nil))
+                            path.append(SkinJournalRoute.journeyDetail(
+                                journeyID: selectedJourney.id,
+                                hideProgressBar: false,
+                                initialIndex: nil
+                            ))
                         }
                     )
 
@@ -166,15 +178,59 @@ struct SkinJournalRootView: View {
                         howItFeels: howItFeels,
                         whatYouNoticed: whatYouNoticed
                     ) { entry in
+                        var shouldShowMilestoneOneCompletion = false
+                        var shouldShowMilestoneTwoCompletion = false
                         viewModel.updateLatestJourney { j in
                             j.journalEntries.append(entry)
+
+                            if let milestoneIndex = j.milestones.firstIndex(where: { $0.order == 1 }),
+                               !j.milestones[milestoneIndex].isCompleted,
+                               Self.hasReachedMilestoneOneEnd(journey: j, on: entry.date) {
+                                j.milestones[milestoneIndex].isCompleted = true
+                                j.milestones[milestoneIndex].completedDate = entry.date
+                                shouldShowMilestoneOneCompletion = true
+                            }
+
+                            if let milestoneIndex = j.milestones.firstIndex(where: { $0.order == 2 }),
+                               !j.milestones[milestoneIndex].isCompleted,
+                               Self.hasReachedMilestoneTwoEnd(journey: j, on: entry.date) {
+                                j.milestones[milestoneIndex].isCompleted = true
+                                j.milestones[milestoneIndex].completedDate = entry.date
+                                shouldShowMilestoneTwoCompletion = true
+                            }
                         }
-                        // Balik ke "Your skin from time to time" (mainJourney)
-                        while path.count > 1 {
-                            path.removeLast()
+
+                        if shouldShowMilestoneTwoCompletion {
+                            path.append(SkinJournalRoute.milestoneTwoCompletion)
+                        } else if shouldShowMilestoneOneCompletion {
+                            path.append(SkinJournalRoute.milestoneOneCompletion)
+                        } else {
+                            // Balik ke "Your skin from time to time" (mainJourney)
+                            while path.count > 1 {
+                                path.removeLast()
+                            }
                         }
                     } onBack: {
                         path.removeLast()
+                    }
+
+                case .milestoneOneCompletion:
+                    MilestoneOneCompletionView(
+                        onStopJourney: {
+                            viewModel.archiveLatestJourney()
+                            path = NavigationPath()
+                        },
+                        onContinueJourney: {
+                            while path.count > 1 {
+                                path.removeLast()
+                            }
+                        }
+                    )
+
+                case .milestoneTwoCompletion:
+                    MilestoneTwoCompletionView { rating in
+                        viewModel.finishLatestJourney(rating: rating)
+                        path = NavigationPath()
                     }
 
                 case .productValidation:
@@ -205,6 +261,16 @@ struct SkinJournalRootView: View {
                 // `xcrun simctl launch <udid> test.C4-MySkin --self-assessment`
                 if args.contains("--self-assessment") {
                     path.append(SkinJournalRoute.selfAssessment(imageName: nil))
+                }
+                // Hook pengujian layar keputusan setelah Milestone 1 selesai:
+                // `xcrun simctl launch <udid> test.C4-MySkin --milestone-1-completion`
+                if args.contains("--milestone-1-completion") {
+                    path.append(SkinJournalRoute.milestoneOneCompletion)
+                }
+                // Hook pengujian layar akhir perjalanan setelah Milestone 2:
+                // `xcrun simctl launch <udid> test.C4-MySkin --milestone-2-completion`
+                if args.contains("--milestone-2-completion") {
+                    path.append(SkinJournalRoute.milestoneTwoCompletion)
                 }
                 // Hook pengujian timelapse: buat journey sample (3 foto sintetis)
                 // lalu buka halaman "Your skin from time to time" — timelapse
@@ -255,6 +321,93 @@ struct SkinJournalRootView: View {
                 #endif
             }
         }
+    }
+
+    private static func hasReachedMilestoneOneEnd(
+        journey: SkincareJourney,
+        on date: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard let targetDate = calendar.date(
+            byAdding: .day,
+            value: MilestoneProgress.flagDurationDays,
+            to: journey.startDate
+        ) else {
+            return false
+        }
+
+        return calendar.startOfDay(for: date) >= calendar.startOfDay(for: targetDate)
+    }
+
+    private func skipToMilestoneOneCompletion() {
+        guard DemoConfiguration.isEnabled else { return }
+        ensureDemoJourneyExists()
+
+        viewModel.updateLatestJourney { journey in
+            guard let milestoneIndex = journey.milestones.firstIndex(where: { $0.order == 1 }) else { return }
+            journey.startDate = Calendar.current.date(
+                byAdding: .day,
+                value: -MilestoneProgress.flagDurationDays,
+                to: Date()
+            ) ?? journey.startDate
+            journey.milestones[milestoneIndex].isCompleted = true
+            journey.milestones[milestoneIndex].completedDate = Date()
+
+            if let milestoneTwoIndex = journey.milestones.firstIndex(where: { $0.order == 2 }) {
+                journey.milestones[milestoneTwoIndex].isCompleted = false
+                journey.milestones[milestoneTwoIndex].completedDate = nil
+            }
+        }
+
+        path.append(SkinJournalRoute.mainJourney)
+        path.append(SkinJournalRoute.milestoneOneCompletion)
+    }
+
+    private func skipToMilestoneTwoCompletion() {
+        guard DemoConfiguration.isEnabled else { return }
+        ensureDemoJourneyExists()
+
+        viewModel.updateLatestJourney { journey in
+            let now = Date()
+            let milestoneOneEnd = Calendar.current.date(
+                byAdding: .day,
+                value: -(MilestoneProgress.flagDurationDays * 4),
+                to: now
+            ) ?? now
+
+            if let milestoneOneIndex = journey.milestones.firstIndex(where: { $0.order == 1 }) {
+                journey.milestones[milestoneOneIndex].isCompleted = true
+                journey.milestones[milestoneOneIndex].completedDate = milestoneOneEnd
+            }
+            if let milestoneTwoIndex = journey.milestones.firstIndex(where: { $0.order == 2 }) {
+                journey.milestones[milestoneTwoIndex].isCompleted = true
+                journey.milestones[milestoneTwoIndex].completedDate = now
+            }
+        }
+
+        path.append(SkinJournalRoute.milestoneTwoCompletion)
+    }
+
+    private func ensureDemoJourneyExists() {
+        guard viewModel.latestJourney == nil else { return }
+        viewModel.addJourney(SkincareJourney(product: SkincareProduct.samples[0]))
+    }
+
+    private static func hasReachedMilestoneTwoEnd(
+        journey: SkincareJourney,
+        on date: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard let milestoneOneEndDate = journey.milestones.first(where: { $0.order == 1 })?.completedDate,
+              let targetDate = calendar.date(
+                byAdding: .day,
+                value: MilestoneProgress.flagDurationDays * 4,
+                to: milestoneOneEndDate
+              ) else {
+            return false
+        }
+
+        return calendar.startOfDay(for: date) >= calendar.startOfDay(for: targetDate)
     }
 
     /// Buat journey sample (3 foto sintetis) untuk DEBUG hook.
@@ -317,12 +470,14 @@ enum SkinJournalRoute: Hashable {
     case chooseProduct(imageName: String?)
     case selectedProduct(product: SkincareProduct, imageName: String?)
     case mainJourney
-    case journeyDetail(hideProgressBar: Bool = false, initialIndex: Int? = nil)
+    case journeyDetail(journeyID: UUID? = nil, hideProgressBar: Bool = false, initialIndex: Int? = nil)
     case historyJournaling
     case calendarJournaling
     case camera
     case selfAssessment(imageName: String?)
     case journalEntry(imageName: String?, skinCondition: String, howItFeels: String, whatYouNoticed: String)
+    case milestoneOneCompletion
+    case milestoneTwoCompletion
     case productValidation
 }
 

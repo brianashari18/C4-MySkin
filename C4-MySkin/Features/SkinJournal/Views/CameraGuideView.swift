@@ -14,7 +14,7 @@ struct CameraGuideView: View {
 
     /// Area guide muka (ternormalisasi, kiri-atas) — sama dengan yang dipakai
     /// deteksi wajah di CameraPreviewView.
-    private let guideRect = CGRect(x: 0.12, y: 0.10, width: 0.76, height: 0.80)
+    private let guideRect = CGRect(x: 0.15, y: 0.05, width: 0.68, height: 0.85)
 
     var body: some View {
         ZStack {
@@ -56,19 +56,12 @@ struct CameraGuideView: View {
                         onCapture: onTakePhoto
                     )
 
-                    // Guide muka — diposisikan persis di guideRect (sama dengan deteksi)
-                    GeometryReader { geometry in
-                        FaceOutline()
-                            .frame(
-                                width: geometry.size.width * guideRect.width,
-                                height: geometry.size.height * guideRect.height
-                            )
-                            .position(
-                                x: geometry.size.width * guideRect.midX,
-                                y: geometry.size.height * guideRect.midY
-                            )
-                    }
-                    .opacity(0.35)
+                    // Visual area alignment dari repo referensi. Mekanik deteksi
+                    // tetap memakai implementasi lama di CameraPreviewView.
+                    FaceAlignmentGuideOverlay(
+                        guideRect: guideRect,
+                        isAligned: isFaceCentered
+                    )
                     .allowsHitTesting(false)
 
                     // Status Overlay Indicator
@@ -182,6 +175,86 @@ struct CameraGuideView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+    }
+}
+
+/// Overlay visual untuk membantu user menempatkan wajah secara konsisten.
+/// Hanya mengubah tampilan; tidak ikut menentukan hasil deteksi wajah.
+private struct FaceAlignmentGuideOverlay: View {
+    let guideRect: CGRect
+    let isAligned: Bool
+
+    private var outlineColor: Color {
+        isAligned
+            ? Color(red: 0.25, green: 0.82, blue: 0.43)
+            : Color(red: 1.00, green: 0.80, blue: 0.05)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let targetRect = CGRect(
+                x: size.width * guideRect.minX,
+                y: size.height * guideRect.minY,
+                width: size.width * guideRect.width,
+                height: size.height * guideRect.height
+            )
+
+            ZStack {
+                Path { path in
+                    path.addRect(CGRect(origin: .zero, size: size))
+                    path.addPath(facePath(in: targetRect))
+                }
+                .fill(Color.black.opacity(0.34), style: FillStyle(eoFill: true))
+
+                Path { path in
+                    path.move(to: CGPoint(x: targetRect.midX, y: 0))
+                    path.addLine(to: CGPoint(x: targetRect.midX, y: size.height))
+                    path.move(to: CGPoint(x: 0, y: targetRect.midY))
+                    path.addLine(to: CGPoint(x: size.width, y: targetRect.midY))
+                }
+                .stroke(
+                    Color.white.opacity(0.72),
+                    style: StrokeStyle(lineWidth: 1.2, dash: [8, 8])
+                )
+
+                facePath(in: targetRect)
+                    .stroke(outlineColor, lineWidth: 3.5)
+                    .shadow(color: outlineColor.opacity(0.25), radius: 3)
+                    .animation(.easeInOut(duration: 0.2), value: isAligned)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func facePath(in rect: CGRect) -> Path {
+        let width = rect.width
+        let height = rect.height
+
+        return Path { path in
+            path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+            path.addCurve(
+                to: CGPoint(x: rect.maxX, y: rect.minY + height * 0.38),
+                control1: CGPoint(x: rect.midX + width * 0.28, y: rect.minY),
+                control2: CGPoint(x: rect.maxX, y: rect.minY + height * 0.14)
+            )
+            path.addCurve(
+                to: CGPoint(x: rect.midX, y: rect.maxY),
+                control1: CGPoint(x: rect.maxX, y: rect.minY + height * 0.78),
+                control2: CGPoint(x: rect.midX + width * 0.27, y: rect.maxY)
+            )
+            path.addCurve(
+                to: CGPoint(x: rect.minX, y: rect.minY + height * 0.38),
+                control1: CGPoint(x: rect.midX - width * 0.27, y: rect.maxY),
+                control2: CGPoint(x: rect.minX, y: rect.minY + height * 0.78)
+            )
+            path.addCurve(
+                to: CGPoint(x: rect.midX, y: rect.minY),
+                control1: CGPoint(x: rect.minX, y: rect.minY + height * 0.14),
+                control2: CGPoint(x: rect.midX - width * 0.28, y: rect.minY)
+            )
+            path.closeSubpath()
+        }
     }
 }
 

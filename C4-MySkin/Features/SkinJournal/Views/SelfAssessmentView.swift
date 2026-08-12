@@ -318,6 +318,7 @@ private struct QuestionnaireChip: View {
 // MARK: - Speech Bubble View (Attached Mockup Design)
 struct SpeechBubbleView: View {
     let text: String
+    var maxWidth: CGFloat? = nil
 
     var body: some View {
         ZStack {
@@ -325,14 +326,32 @@ struct SpeechBubbleView: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.20), radius: 8, x: 0, y: 3)
 
-            Text(text)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
+            bubbleText
+        }
+        .fixedSize(horizontal: true, vertical: true)
+    }
+
+    @ViewBuilder
+    private var bubbleText: some View {
+        if let maxWidth {
+            baseText
+                .frame(width: maxWidth, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 22)
+        } else {
+            baseText
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
                 .padding(.bottom, 22)
         }
-        .fixedSize(horizontal: true, vertical: true)
+    }
+
+    private var baseText: some View {
+        Text(text)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
+            .multilineTextAlignment(.leading)
     }
 }
 
