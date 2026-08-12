@@ -37,9 +37,13 @@ struct SkinJournalRootView: View {
                         sensitivity: userProfile.skinSensitivityRaw ?? "Moderate",
                         skinConcern: concernLabel,
                         onRetakeTest: {
-                            // Retake skin test action
+                            path.append(SkinJournalRoute.personalization)
                         }
                     )
+                case .personalization:
+                    PersonalizationView { _ in
+                        path.removeLast()
+                    }
                 case .mainJourney:
                     // "Your skin from time to time" — empty/active state
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
@@ -278,6 +282,7 @@ struct SkinJournalRootView: View {
 
 enum SkinJournalRoute: Hashable {
     case skinProfile
+    case personalization
     case chooseProduct(imageName: String?)
     case selectedProduct(product: SkincareProduct, imageName: String?)
     case mainJourney
