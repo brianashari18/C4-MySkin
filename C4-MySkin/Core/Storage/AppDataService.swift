@@ -23,6 +23,7 @@ final class AppDataService {
                 UserProfile.self,
                 PickedProduct.self,
                 ProductComparison.self,
+                TrackedProduct.self,
                 Journey.self,
                 JourneyMilestone.self,
                 JourneyEntry.self,
@@ -59,6 +60,31 @@ final class AppDataService {
         profile.name = name
         profile.skinTypeRaw = skinType?.rawValue
         profile.skinSensitivityRaw = skinSensitivity?.rawValue
+        try? modelContext.save()
+    }
+
+    // MARK: - Tracked Product (Skin Journal)
+
+    func saveTrackedProduct(
+        name: String,
+        brand: String,
+        category: String = "",
+        imageURL: String? = nil,
+        slug: String? = nil,
+        highlights: [String] = []
+    ) {
+        let profile = fetchOrCreateProfile()
+        let tracked = TrackedProduct(
+            name: name,
+            brand: brand,
+            category: category,
+            imageURL: imageURL,
+            slug: slug,
+            highlights: highlights
+        )
+        tracked.profile = profile
+        modelContext.insert(tracked)
+        profile.trackedProducts = (profile.trackedProducts ?? []) + [tracked]
         try? modelContext.save()
     }
 }

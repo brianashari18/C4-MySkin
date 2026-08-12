@@ -210,6 +210,34 @@ struct ValidationResult {
         )
     }
 
+    init(product: SkincareProduct) {
+        let keyIngs = product.highlights.map {
+            KeyIngredientItem(name: $0, description: "Supports skin health and targeted formulation.")
+        }
+        let ings = product.highlights.map {
+            IngredientCheckItem(name: $0, isPresent: true)
+        }
+        let ingMatchText = product.highlights.isEmpty ? "Formulated with balanced cosmetic ingredients." : "Features key actives: \(product.highlights.prefix(3).joined(separator: ", "))."
+
+        self.init(
+            productName: product.name,
+            brand: product.brand,
+            imageURL: product.imageURL,
+            price: "Price unavailable",
+            review: "4.5 / 5",
+            brandReputation: "\(product.brand) is a popular skincare brand offering targeted solutions.",
+            reviewSummary: "User reviews highlight effective performance and positive skin feel.",
+            priceSummary: "Standard price point in category.",
+            ingredientsMatchSummary: ingMatchText,
+            ingredientChecks: ings,
+            keyIngredientItems: keyIngs,
+            bestForSummary: "Daily skincare routine suited for targeted skin care.",
+            benefitItems: product.highlights.map { BenefitItem(title: $0, description: "Supports skin barrier and health.") },
+            concernItems: [],
+            isSuited: true
+        )
+    }
+
     /// Convenience array used by comparison cards for the Insight section
     var insightItems: [String] {
         ["Price: \(price)", "Brand: \(brand)", "Review: \(review)"]
