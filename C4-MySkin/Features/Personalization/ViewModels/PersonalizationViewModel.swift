@@ -310,7 +310,16 @@ final class PersonalizationViewModel {
     }
 
     func finishConcern() {
+        saveToSwiftData()
         phase = .summary
+    }
+
+    private func saveToSwiftData() {
+        let profile = AppDataService.shared.fetchOrCreateProfile()
+        profile.skinTypeRaw = selectedSkinType?.rawValue
+        profile.skinSensitivityRaw = selectedSkinSensitivity?.rawValue
+        profile.selectedConcernIDs = selectedConcerns.map(\.rawValue)
+        AppDataService.shared.saveProfile(profile)
     }
 
     // MARK: - Back Navigation

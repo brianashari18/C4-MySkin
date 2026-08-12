@@ -28,11 +28,14 @@ struct SkinJournalRootView: View {
             .navigationDestination(for: SkinJournalRoute.self) { route in
                 switch route {
                 case .skinProfile:
+                    let concernLabel = userProfile.selectedConcernIDs.isEmpty
+                        ? "_"
+                        : userProfile.selectedConcernIDs.joined(separator: ", ")
                     SkinProfileView(
                         userName: userProfile.name.isEmpty ? "POLO" : userProfile.name,
                         skinType: userProfile.skinTypeRaw ?? "Dry",
                         sensitivity: userProfile.skinSensitivityRaw ?? "Moderate",
-                        skinConcern: "_",
+                        skinConcern: concernLabel,
                         onRetakeTest: {
                             // Retake skin test action
                         }
