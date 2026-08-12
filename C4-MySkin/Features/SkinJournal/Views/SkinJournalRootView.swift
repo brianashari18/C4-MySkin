@@ -44,6 +44,10 @@ struct SkinJournalRootView: View {
                             CameraSessionManager.shared.prepare()
                             path.append(SkinJournalRoute.camera)
                         },
+                        onStartAssessment: {
+                            let imageName = viewModel.latestJourney?.progressPhotos.last?.imageName
+                            path.append(SkinJournalRoute.selfAssessment(imageName: imageName))
+                        },
                         onChooseProduct: {
                             path.append(SkinJournalRoute.chooseProduct(imageName: nil))
                         },
@@ -92,29 +96,23 @@ struct SkinJournalRootView: View {
                     SelectedProductView(
                         product: product,
                         onStartJourney: {
-                            if viewModel.latestJourney == nil {
-                                viewModel.addJourney(SkincareJourney(product: product))
-                            }
-                            if let imageName, !imageName.isEmpty {
-                                path.append(SkinJournalRoute.selfAssessment(imageName: imageName))
-                            } else {
-                                // Pop back to mainJourney screen (now active)
-                                path.removeLast(2)
-                            }
+                            viewModel.addJourney(SkincareJourney(product: product))
+                            CameraSessionManager.shared.prepare()
+                            path.append(SkinJournalRoute.camera)
                         }
                     )
-
 
                 case .camera:
                     CameraFlowView { imageName in
                         if !imageName.isEmpty {
-                            path.removeLast() // keluar dari camera
-                            if viewModel.latestJourney != nil {
-                                // Journey sudah ada → langsung kuesioner (foto untuk entry)
-                                path.append(SkinJournalRoute.selfAssessment(imageName: imageName))
-                            } else {
-                                // Belum ada journey → pilih produk dulu
-                                path.append(SkinJournalRoute.chooseProduct(imageName: imageName))
+                            viewModel.updateLatestJourney { j in
+                                j.progressPhotos.append(
+                                    ProgressPhoto(date: Date(), imageName: imageName, milestoneOrder: 1)
+                                )
+                            }
+                            // Balik langsung ke JourneyMainView (tanpa kuesioner dulu)
+                            while path.count > 1 {
+                                path.removeLast()
                             }
                         } else {
                             path.removeLast()
@@ -146,22 +144,15 @@ struct SkinJournalRootView: View {
                         viewModel.updateLatestJourney { j in
                             j.journalEntries.append(entry)
                             let milestoneIndex = j.milestones.firstIndex(where: { !$0.isCompleted })
-                            if let imageName, !imageName.isEmpty {
-                                j.progressPhotos.append(
-                                    ProgressPhoto(
-                                        date: Date(),
-                                        imageName: imageName,
-                                        milestoneOrder: (milestoneIndex ?? 0) + 1
-                                    )
-                                )
-                            }
                             if let milestoneIndex {
                                 j.milestones[milestoneIndex].isCompleted = true
                                 j.milestones[milestoneIndex].completedDate = Date()
                             }
                         }
-                        // Balik ke "Your skin from time to time"
-                        path.removeLast(2)
+                        // Balik ke "Your skin from time to time" (mainJourney)
+                        while path.count > 1 {
+                            path.removeLast()
+                        }
                     } onBack: {
                         path.removeLast()
                     }

@@ -12,6 +12,7 @@ struct JourneyMainView: View {
     let journey: SkincareJourney
     let isJourneyActive: Bool
     let onAddImage: () -> Void
+    let onStartAssessment: () -> Void
     let onChooseProduct: () -> Void
     let onViewDetail: () -> Void
     let onViewHistory: () -> Void
@@ -20,7 +21,8 @@ struct JourneyMainView: View {
     init(
         journey: SkincareJourney,
         isJourneyActive: Bool = false,
-        onAddImage: @escaping () -> Void,
+        onAddImage: @escaping () -> Void = {},
+        onStartAssessment: @escaping () -> Void = {},
         onChooseProduct: @escaping () -> Void = {},
         onViewDetail: @escaping () -> Void = {},
         onViewHistory: @escaping () -> Void = {},
@@ -29,6 +31,7 @@ struct JourneyMainView: View {
         self.journey = journey
         self.isJourneyActive = isJourneyActive
         self.onAddImage = onAddImage
+        self.onStartAssessment = onStartAssessment
         self.onChooseProduct = onChooseProduct
         self.onViewDetail = onViewDetail
         self.onViewHistory = onViewHistory
@@ -74,8 +77,7 @@ struct JourneyMainView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        // Photo box: empty state placeholder vs timelapse INLINE
-                        // (auto-play 2×, tanggal kanan bawah, produk kiri atas)
+                        // Photo box: empty state placeholder ("no photos yet") vs captured photo / timelapse
                         if journey.progressPhotos.isEmpty {
                             ProgressPhotoCard(imageName: nil)
                                 .padding(.horizontal, 28)
@@ -89,48 +91,27 @@ struct JourneyMainView: View {
                             .padding(.top, 16)
                         }
 
-                        // Add Photos Pill Button
-                        Button(action: {
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-                            if isJourneyActive {
-                                onAddImage()
-                            } else {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    showNoJourneyPrompt = true
-                                }
-                            }
-                        }) {
-                            Text("Add Photos")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(Color.white)
-                                .frame(width: 200, height: 48)
-                                .background(Color(red: 0.38, green: 0.61, blue: 0.93))
-                                .clipShape(Capsule())
-                                .shadow(color: Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.3), radius: 6, x: 0, y: 3)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Add Photos")
-                        .padding(.top, 4)
-
-                        // Bottom Card: Add Skincare Journey (Empty) vs Active & Upcoming Milestone Cards
-                        if isJourneyActive {
+                        // Middle Container: Milestone Card (bila foto sudah di-capture atau journey aktif) vs AddSkincareJourneyCard (bila awal)
+                        let isMilestoneActive = isJourneyActive || !journey.progressPhotos.isEmpty
+                        if isMilestoneActive {
                             Divider()
                                 .background(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.3))
                                 .padding(.horizontal, 24)
                                 .padding(.top, 8)
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Current Skincare Journey")
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                            if !journey.journalEntries.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Current Skincare Journey")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
 
-                                Text(journey.product.name)
-                                    .font(.system(size: 19, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                    Text(journey.product.name)
+                                        .font(.system(size: 19, weight: .bold))
+                                        .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 24)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
 
                             VStack(spacing: 16) {
                                 Button(action: {
@@ -139,18 +120,20 @@ struct JourneyMainView: View {
                                     if !journey.journalEntries.isEmpty {
                                         onViewDetail()
                                     } else {
-                                        onAddImage()
+                                        onStartAssessment()
                                     }
                                 }) {
                                     ActiveMilestoneCard(journey: journey)
                                 }
                                 .buttonStyle(.plain)
 
-                                UpcomingMilestoneCard(milestoneNumber: 2)
+                                if !journey.journalEntries.isEmpty {
+                                    UpcomingMilestoneCard(milestoneNumber: 2)
+                                }
                             }
                             .padding(.horizontal, 24)
                         } else {
-                            // Empty state: klik container → pilih produk dulu → balik ke halaman ini
+                            // Empty / Initial state: container kuning "add your skincare journey"
                             VStack(spacing: 16) {
                                 AddSkincareJourneyCard(onTap: onChooseProduct)
 
@@ -160,7 +143,40 @@ struct JourneyMainView: View {
                                 }
                             }
                             .padding(.horizontal, 24)
-                            .padding(.top, 12)
+                            .padding(.top, 8)
+                        }
+
+                        // Start Journey CTA Button: Hanya tampil SEBELUM config awal jurnal diselesaikan & di-save!
+                        if journey.journalEntries.isEmpty {
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                if isMilestoneActive {
+                                    onStartAssessment()
+                                }
+                            }) {
+                                Text("Start Journey")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundStyle(Color.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        isMilestoneActive
+                                            ? Color(red: 0.38, green: 0.61, blue: 0.93)
+                                            : Color(red: 0.72, green: 0.76, blue: 0.82)
+                                    )
+                                    .clipShape(Capsule())
+                                    .shadow(
+                                        color: isMilestoneActive
+                                            ? Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.3)
+                                            : Color.clear,
+                                        radius: 6, x: 0, y: 3
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!isMilestoneActive)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 8)
                         }
 
                         Spacer(minLength: 24)

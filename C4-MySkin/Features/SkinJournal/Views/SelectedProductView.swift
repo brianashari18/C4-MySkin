@@ -106,7 +106,7 @@ struct SelectedProductView: View {
 
                 // 4. Start Journey Bottom CTA Button
                 PillButton(
-                    title: "Start Journey",
+                    title: "Open Camera",
                     isEnabled: true
                 ) {
                     let generator = UIImpactFeedbackGenerator(style: .medium)

@@ -234,90 +234,96 @@ struct ActiveMilestoneCard: View {
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
 
-            // 3. Timeline Row: Jar Icon (Start Date) --- Dashed Line --- Flag Icon (Results in 2 weeks)
-            HStack(alignment: .top, spacing: 12) {
-                // Left: Circle Jar Icon + Start Date
-                VStack(spacing: 4) {
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
-                            .frame(width: 44, height: 44)
-                            .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
-
-                        Image(systemName: journey.product.iconName ?? "jar.fill")
-                            .font(.system(size: 22))
-                            .foregroundStyle(Color.white)
-                    }
-
-                    VStack(spacing: 1) {
-                        Text("Start")
-                            .font(.system(size: 12, weight: .bold))
-                        Text(formattedDate(journey.startDate))
-                            .font(.system(size: 10, weight: .semibold))
-                    }
-                    .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
-                }
-
-                // Middle: Custom Dark Blue Filled Progress Bar / Slider with Shortened Length
-                GeometryReader { geometry in
-                    let trackInset: CGFloat = 16 // Margin on left & right to shorten length
-                    let trackWidth = max(20, geometry.size.width - (trackInset * 0.5))
-                    let currentProgress = max(0.80, min(1.0, CGFloat(progress.progress)))
-                    let fillWidth = trackWidth * currentProgress
-
-                    ZStack(alignment: .leading) {
-                        // Background Track (Shortened)
-                        Capsule()
-                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.20))
-                            .frame(width: trackWidth, height: 8)
-
-                        // Filled Dark Blue Progress Bar
-                        Capsule()
-                            .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
-                            .frame(width: fillWidth, height: 8)
-
-                        // Active Progress Dot
+            // 3. Timeline Layout: Milestone #1 (14 Dashes '-') vs Milestone #2 (4 Flags dengan konektor 3 dashes '- - -')
+            if progress.currentFlag <= 1 {
+                // Milestone #1: 14 Dashes '-' antara Jar Icon & Flag
+                HStack(alignment: .top, spacing: 10) {
+                    // Left: Circle Jar Icon + Start Date
+                    VStack(spacing: 4) {
                         ZStack {
                             Circle()
-                                .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
-                                .frame(width: 16, height: 16)
+                                .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
+                                .frame(width: 44, height: 44)
+                                .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
 
-                            Circle()
-                                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.5), lineWidth: 3)
-                                .frame(width: 22, height: 22)
+                            Image(systemName: journey.product.iconName ?? "jar.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(Color.white)
                         }
-                        .offset(x: fillWidth - 11)
-                    }
-                    .frame(width: geometry.size.width, height: 44, alignment: .center)
-                }
 
-                // Right: Flag Icon + Results in 2 weeks
-                VStack(spacing: 4) {
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
-                        .frame(height: 44)
-
-                    VStack(spacing: 1) {
-                        if progress.isComplete {
-                            Text("Done")
-                                .font(.system(size: 11, weight: .bold))
-                            Text("All flags")
+                        VStack(spacing: 1) {
+                            Text("Start")
+                                .font(.system(size: 12, weight: .bold))
+                            Text(formattedDate(journey.startDate))
                                 .font(.system(size: 10, weight: .semibold))
-                        } else if progress.currentFlag == 1 {
+                        }
+                        .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
+                    }
+
+                    // Middle: Exactly 14 '-' Dash Segments (milestone 1)
+                    HStack(spacing: 3) {
+                        let dashCount = 14
+                        let filledCount = progress.isComplete
+                            ? dashCount
+                            : max(1, min(dashCount, Int(round(progress.progress * Double(dashCount)))))
+
+                        ForEach(0..<dashCount, id: \.self) { index in
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(
+                                    index < filledCount
+                                        ? Color(red: 0.16, green: 0.35, blue: 0.54) // Warna progress aktif (Dark Blue)
+                                        : Color(red: 0.74, green: 0.83, blue: 0.93) // Warna sisa track (Light Ice Blue)
+                                )
+                                .frame(height: 5)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+
+                    // Right: Flag Icon + Results in 2 weeks
+                    VStack(spacing: 4) {
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
+                            .frame(height: 44)
+
+                        VStack(spacing: 1) {
                             Text("Results")
                                 .font(.system(size: 12, weight: .bold))
                             Text("in 2 weeks")
                                 .font(.system(size: 10, weight: .semibold))
-                        } else {
-                            Text("Week \(progress.currentWeek)")
-                                .font(.system(size: 11, weight: .semibold))
-                            Text("of \(progress.totalFlags * 2)")
-                                .font(.system(size: 10, weight: .semibold))
                         }
+                        .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
                     }
-                    .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
                 }
+            } else {
+                // Milestone #2 (4 Flags dengan 3 Dashes '- - -' antar flag)
+                HStack(spacing: 6) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
+                            .frame(width: 32, height: 32)
+
+                        Image(systemName: journey.product.iconName ?? "jar.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color.white)
+                    }
+
+                    ForEach(1...4, id: \.self) { flagIndex in
+                        ThreeDashConnector(
+                            activeCount: progress.currentFlag > flagIndex ? 3 : (progress.currentFlag == flagIndex ? Int(round(progress.progress * 3.0)) : 0)
+                        )
+
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(
+                                progress.currentFlag >= flagIndex
+                                    ? Color(red: 0.22, green: 0.43, blue: 0.65)
+                                    : Color(white: 0.65)
+                            )
+                    }
+                }
+                .frame(height: 36)
             }
         }
         .padding(18)
@@ -330,12 +336,109 @@ struct ActiveMilestoneCard: View {
         )
         .padding(.init(top: 0, leading: 0, bottom: 16, trailing: 0))
     }
+}
 
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
-        return formatter.string(from: date)
+// MARK: - Upcoming / Locked Milestone Card (Milestone #2)
+private struct UpcomingMilestoneCard: View {
+    let milestoneNumber: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // 1. "Upcoming" Badge Pill
+            Text("Upcoming")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(Color(red: 0.45, green: 0.45, blue: 0.45))
+                .clipShape(Capsule())
+
+            // 2. Milestone Title (Muted Dark Gray)
+            Text("Milestone #\(milestoneNumber)")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(Color(red: 0.40, green: 0.40, blue: 0.40))
+
+            // 3. Timeline Row: Jar Icon --- 3 Dashes --- Flag 1 --- 3 Dashes --- Flag 2 --- 3 Dashes --- Flag 3 --- 3 Dashes --- Flag 4
+            HStack(spacing: 6) {
+                // Jar icon node (gray)
+                ZStack {
+                    Circle()
+                        .fill(Color(white: 0.65))
+                        .frame(width: 32, height: 32)
+
+                    Image(systemName: "jar.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.white)
+                }
+
+                ThreeDashConnector()
+
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color(white: 0.65))
+
+                ThreeDashConnector()
+
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color(white: 0.65))
+
+                ThreeDashConnector()
+
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color(white: 0.65))
+
+                ThreeDashConnector()
+
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color(white: 0.65))
+            }
+            .frame(height: 36)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity)
+        .frame(height: 150)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color(red: 0.72, green: 0.72, blue: 0.72))
+                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
+        )
     }
+}
+
+// MARK: - Three Dash Connector Component (- - -)
+private struct ThreeDashConnector: View {
+    let activeCount: Int
+    let activeColor: Color
+    let inactiveColor: Color
+
+    init(
+        activeCount: Int = 0,
+        activeColor: Color = Color(red: 0.16, green: 0.35, blue: 0.54),
+        inactiveColor: Color = Color(white: 0.75)
+    ) {
+        self.activeCount = activeCount
+        self.activeColor = activeColor
+        self.inactiveColor = inactiveColor
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(index < activeCount ? activeColor : inactiveColor)
+                    .frame(width: 8, height: 4)
+            }
+        }
+    }
+}
+
+private func formattedDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "dd/MM/yyyy"
+    return formatter.string(from: date)
 }
 
 // MARK: - Action Bubble Button

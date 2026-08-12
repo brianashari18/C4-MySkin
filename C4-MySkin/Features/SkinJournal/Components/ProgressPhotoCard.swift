@@ -26,11 +26,15 @@ struct ProgressPhotoCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 26))
                 } else {
                     VStack(spacing: 4) {
-                        Text("no photos")
+                        Text("Timelapse of your")
                             .font(.system(size: 22, weight: .medium))
                             .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
-                        Text("yet")
+                        Text("photo will appear heare")
                             .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
+                            .padding(.bottom, 10)
+                        Text("Tap button “add your skincare journey” to begin")
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
                     }
                 }

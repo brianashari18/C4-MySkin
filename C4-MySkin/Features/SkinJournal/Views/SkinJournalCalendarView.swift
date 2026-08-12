@@ -13,7 +13,6 @@ struct SkinJournalCalendarView: View {
     let journey: SkincareJourney
     let onSelectDateEntry: (JournalEntry, Int) -> Void
 
-    @State private var currentMonthDate = Date()
     private let calendar = Calendar.current
 
     init(
@@ -24,20 +23,11 @@ struct SkinJournalCalendarView: View {
         self.onSelectDateEntry = onSelectDateEntry
     }
 
-    private var daysInMonth: [Date?] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentMonthDate) else { return [] }
-        let firstDayOfMonth = monthInterval.start
-        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) // 1 = Sun, 2 = Mon...
-
-        var days: [Date?] = Array(repeating: nil, count: firstWeekday - 1)
-
-        let numberOfDays = calendar.range(of: .day, in: .month, for: currentMonthDate)?.count ?? 30
-        for day in 0..<numberOfDays {
-            if let date = calendar.date(byAdding: .day, value: day, to: firstDayOfMonth) {
-                days.append(date)
-            }
+    /// Daftar 12 bulan terakhir untuk vertical scroll (Instagram archive style)
+    private var availableMonths: [Date] {
+        (0..<12).compactMap { offset in
+            calendar.date(byAdding: .month, value: -offset, to: Date())
         }
-        return days
     }
 
     private var sampleEntries: [JournalEntry] {
@@ -77,136 +67,117 @@ struct SkinJournalCalendarView: View {
                         .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 50)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        // Month Navigation Header Card
-                        HStack {
-                            Button(action: {
-                                changeMonth(by: -1)
-                            }) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-                                    .frame(width: 36, height: 36)
-                                    .background(Circle().fill(Color.white))
-                            }
-
-                            Spacer()
-
-                            Text(monthYearString(from: currentMonthDate))
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-
-                            Spacer()
-
-                            Button(action: {
-                                changeMonth(by: 1)
-                            }) {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-                                    .frame(width: 36, height: 36)
-                                    .background(Circle().fill(Color.white))
-                            }
+                // Vertical Scrollable Months (Instagram Archive Style)
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(spacing: 20) {
+                        ForEach(availableMonths, id: \.self) { monthDate in
+                            MonthCalendarCard(
+                                monthDate: monthDate,
+                                journey: journey,
+                                entries: sampleEntries,
+                                onSelectDateEntry: onSelectDateEntry
+                            )
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 14)
-                        .background(Color.white.opacity(0.8))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.4), lineWidth: 1.5)
-                        )
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-
-                        // Main Calendar Card Box
-                        VStack(spacing: 16) {
-                            // Weekday headers
-                            let weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
-                            HStack {
-                                ForEach(weekdays, id: \.self) { day in
-                                    Text(day)
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
-                                        .frame(maxWidth: .infinity)
-                                }
-                            }
-                            .padding(.bottom, 4)
-
-                            // Days Grid
-                            let columns = Array(repeating: GridItem(.flexible()), count: 7)
-                            LazyVGrid(columns: columns, spacing: 14) {
-                                ForEach(0..<daysInMonth.count, id: \.self) { index in
-                                    if let date = daysInMonth[index] {
-                                        DayCell(
-                                            date: date,
-                                            entries: sampleEntries,
-                                            onTap: { entry, entryIndex in
-                                                let generator = UIImpactFeedbackGenerator(style: .medium)
-                                                generator.impactOccurred()
-                                                onSelectDateEntry(entry, entryIndex)
-                                            }
-                                        )
-                                    } else {
-                                        Color.clear.frame(height: 44)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(20)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 24))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24)
-                                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93), lineWidth: 2)
-                        )
-                        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
-                        .padding(.horizontal, 24)
-
-                        // Legend hint card
-                        HStack(spacing: 10) {
-                            Circle()
-                                .fill(Color(red: 0.38, green: 0.61, blue: 0.93))
-                                .frame(width: 10, height: 10)
-
-                            Text("Tanggal dengan foto progress/jurnal (klik untuk melihat foto hari itu)")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-
-                            Spacer()
-                        }
-                        .padding(14)
-                        .background(Color(red: 0.92, green: 0.96, blue: 1.0))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 32)
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                    .padding(.bottom, 32)
                 }
             }
         }
         .navigationBarBackButtonHidden(true)
     }
+}
 
-    private func changeMonth(by value: Int) {
-        if let newDate = calendar.date(byAdding: .month, value: value, to: currentMonthDate) {
-            currentMonthDate = newDate
-        }
-    }
+// MARK: - Month Calendar Card (Instagram Archive Section)
+private struct MonthCalendarCard: View {
+    let monthDate: Date
+    let journey: SkincareJourney
+    let entries: [JournalEntry]
+    let onSelectDateEntry: (JournalEntry, Int) -> Void
 
-    private func monthYearString(from date: Date) -> String {
+    private let calendar = Calendar.current
+
+    private var monthYearTitle: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "id_ID")
         formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: date)
+        return formatter.string(from: monthDate)
+    }
+
+    private var daysInMonth: [Date?] {
+        guard let monthInterval = calendar.dateInterval(of: .month, for: monthDate) else { return [] }
+        let firstDayOfMonth = monthInterval.start
+        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) // 1 = Sun, 2 = Mon...
+
+        var days: [Date?] = Array(repeating: nil, count: firstWeekday - 1)
+
+        let numberOfDays = calendar.range(of: .day, in: .month, for: monthDate)?.count ?? 30
+        for day in 0..<numberOfDays {
+            if let date = calendar.date(byAdding: .day, value: day, to: firstDayOfMonth) {
+                days.append(date)
+            }
+        }
+        return days
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Month Header Title (No left/right arrow buttons)
+            Text(monthYearTitle)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 4)
+
+            // Weekday headers
+            let weekdays = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+            HStack {
+                ForEach(weekdays, id: \.self) { day in
+                    Text(day)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            // Days Grid
+            let columns = Array(repeating: GridItem(.flexible()), count: 7)
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(0..<daysInMonth.count, id: \.self) { index in
+                    if let date = daysInMonth[index] {
+                        DayCell(
+                            date: date,
+                            journey: journey,
+                            entries: entries,
+                            onTap: { entry, entryIndex in
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                onSelectDateEntry(entry, entryIndex)
+                            }
+                        )
+                    } else {
+                        Color.clear.frame(height: 42)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93), lineWidth: 2)
+        )
+        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 4)
     }
 }
 
 // MARK: - Individual Calendar Day Cell Component
 private struct DayCell: View {
     let date: Date
+    let journey: SkincareJourney
     let entries: [JournalEntry]
     let onTap: (JournalEntry, Int) -> Void
 
@@ -226,6 +197,19 @@ private struct DayCell: View {
         return nil
     }
 
+    private var photoImage: UIImage? {
+        if let photo = journey.progressPhotos.first(where: { calendar.isDate($0.date, inSameDayAs: date) }),
+           let image = CameraViewModel.loadImage(named: photo.imageName) {
+            return image
+        }
+        if let entry = journey.journalEntries.first(where: { calendar.isDate($0.date, inSameDayAs: date) && $0.imageName != nil }),
+           let imageName = entry.imageName,
+           let image = CameraViewModel.loadImage(named: imageName) {
+            return image
+        }
+        return nil
+    }
+
     private var isToday: Bool {
         calendar.isDateInToday(date)
     }
@@ -239,25 +223,34 @@ private struct DayCell: View {
                 onTap(entry, index)
             }
         }) {
-            VStack(spacing: 4) {
+            ZStack {
+                if let photoImage {
+                    Image(uiImage: photoImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 38, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.black.opacity(0.15))
+                        )
+                }
+
                 Text("\(dayNumber)")
-                    .font(.system(size: 15, weight: isToday ? .black : (hasEntry ? .bold : .medium)))
+                    .font(.system(size: 15, weight: isToday ? .black : ((hasEntry || photoImage != nil) ? .bold : .medium)))
                     .foregroundStyle(
-                        hasEntry
+                        (hasEntry || photoImage != nil)
                             ? Color.white
                             : (isToday ? Color(red: 0.38, green: 0.61, blue: 0.93) : Color(red: 0.16, green: 0.35, blue: 0.54))
                     )
-
-                if hasEntry {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(Color.white)
-                }
+                    .shadow(color: photoImage != nil ? Color.black.opacity(0.6) : Color.clear, radius: 2, x: 0, y: 1)
             }
             .frame(width: 38, height: 42)
             .background(
                 Group {
-                    if hasEntry {
+                    if photoImage != nil {
+                        Color.clear
+                    } else if hasEntry {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(red: 0.38, green: 0.61, blue: 0.93))
                     } else if isToday {
@@ -270,7 +263,7 @@ private struct DayCell: View {
             )
         }
         .buttonStyle(.plain)
-        .disabled(!hasEntry)
+        .disabled(!hasEntry && photoImage == nil)
     }
 }
 
