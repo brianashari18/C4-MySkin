@@ -126,12 +126,14 @@ final class ProductValidationViewModel: ObservableObject {
 
         isLoading = true
         showProductNotFoundModal = false
+        currentStep = .loading
 
         Task {
             if let recognizedText = await OCRService.extractText(from: image) {
                 await resolveProductFromText(query: recognizedText)
             } else {
                 isLoading = false
+                currentStep = .review
                 showProductNotFoundModal = true
             }
         }
@@ -279,6 +281,7 @@ final class ProductValidationViewModel: ObservableObject {
         loadingProductID = product.id
         isLoadingResult = true
         searchErrorMessage = nil
+        currentStep = .loading
 
         do {
             let dossier = try await getProductDossierWithProfile(slug: slug)
@@ -292,8 +295,10 @@ final class ProductValidationViewModel: ObservableObject {
                 secondValidationResult = result
             }
 
+            try? await Task.sleep(nanoseconds: 800_000_000)
             currentStep = .result
         } catch {
+            currentStep = .search
             searchErrorMessage = error.localizedDescription
         }
 
@@ -308,12 +313,14 @@ final class ProductValidationViewModel: ObservableObject {
     func resolveProductFromText(query: String) async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 3 else {
+            currentStep = .review
             showProductNotFoundModal = true
             return
         }
 
         isLoading = true
         showProductNotFoundModal = false
+        currentStep = .loading
 
         do {
             let resolveResponse = try await apiClient.resolveProduct(query: trimmed)
@@ -331,11 +338,14 @@ final class ProductValidationViewModel: ObservableObject {
                     secondValidationResult = result
                 }
 
+                try? await Task.sleep(nanoseconds: 800_000_000)
                 currentStep = .result
             } else {
+                currentStep = .review
                 showProductNotFoundModal = true
             }
         } catch {
+            currentStep = .review
             showProductNotFoundModal = true
         }
 
@@ -344,6 +354,10 @@ final class ProductValidationViewModel: ObservableObject {
 
     func leaveSearch() {
         currentStep = validationResult == nil ? .imagePicker : .result
+    }
+
+    func openPersonalization() {
+        currentStep = .personalization
     }
 
     // MARK: - Back Navigation from Result Screen

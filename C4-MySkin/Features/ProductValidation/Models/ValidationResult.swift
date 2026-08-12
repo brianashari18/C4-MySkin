@@ -12,8 +12,10 @@ enum ValidationStep {
     case imagePicker
     case camera
     case review
+    case loading
     case result
     case search
+    case personalization
 }
 
 // MARK: - Rich Structured Item Models for Wireframe Sections

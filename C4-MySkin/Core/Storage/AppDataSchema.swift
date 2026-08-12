@@ -17,6 +17,7 @@ final class UserProfile {
     var skinSensitivityRaw: String?
     var profilePhotoName: String?
     var selectedConcernIDs: [String] = []
+    var hasCompletedPersonalization: Bool = false
 
     @Relationship(deleteRule: .cascade) var pickedProducts: [PickedProduct]? = []
     @Relationship(deleteRule: .cascade) var productComparisons: [ProductComparison]? = []
@@ -24,10 +25,11 @@ final class UserProfile {
     @Relationship(deleteRule: .cascade) var completedJourneys: [CompletedJourney]? = []
     @Relationship(deleteRule: .cascade) var trackedProducts: [TrackedProduct]? = []
 
-    init(name: String = "", skinTypeRaw: String? = nil, skinSensitivityRaw: String? = nil) {
+    init(name: String = "", skinTypeRaw: String? = nil, skinSensitivityRaw: String? = nil, hasCompletedPersonalization: Bool = false) {
         self.name = name
         self.skinTypeRaw = skinTypeRaw
         self.skinSensitivityRaw = skinSensitivityRaw
+        self.hasCompletedPersonalization = hasCompletedPersonalization
     }
 }
 

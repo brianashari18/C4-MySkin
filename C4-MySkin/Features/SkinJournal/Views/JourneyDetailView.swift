@@ -285,13 +285,6 @@ struct JourneyDetailView: View {
     private var currentMilestoneOrder: Int {
         journey.milestones.first { !$0.isCompleted }?.order ?? 1
     }
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "id_ID")
-        formatter.dateFormat = "dd MMMM yyyy"
-        return formatter.string(from: date)
-    }
 }
 
 // MARK: - Read-Only Yellow Ruled Paper Box Component

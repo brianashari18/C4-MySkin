@@ -28,6 +28,10 @@ struct ProductValidationView: View {
                 PhotoReviewView(viewModel: viewModel)
                     .transition(.opacity)
 
+            case .loading:
+                ValidationLoadingView(viewModel: viewModel)
+                    .transition(.opacity)
+
             case .result:
                 if let result = viewModel.validationResult {
                     ValidationResultView(viewModel: viewModel, result: result)
@@ -40,6 +44,12 @@ struct ProductValidationView: View {
             case .search:
                 ProductSearchView(viewModel: viewModel)
                     .transition(.opacity)
+
+            case .personalization:
+                PersonalizationView { _ in
+                    viewModel.currentStep = .result
+                }
+                .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.currentStep)

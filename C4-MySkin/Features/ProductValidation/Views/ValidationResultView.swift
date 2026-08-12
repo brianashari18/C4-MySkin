@@ -18,6 +18,12 @@ struct ValidationResultView: View {
     @State private var isIngredientsExpanded: Bool = false
     @State private var isBenefitsExpanded: Bool = false
     @State private var isConcernsExpanded: Bool = false
+    @State private var showPersonalizationPage: Bool = false
+    @State private var isPersonalizedState: Bool = AppDataService.shared.hasCompletedPersonalization
+
+    private var hasCompletedPersonalization: Bool {
+        isPersonalizedState || AppDataService.shared.hasCompletedPersonalization
+    }
 
     let allowsComparison: Bool
     private let result: ValidationResult
@@ -37,7 +43,7 @@ struct ValidationResultView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .topTrailing) {
             Color.App.backgroundGray.ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -59,19 +65,25 @@ struct ValidationResultView: View {
 
                     Spacer()
 
-                    // Show "+" only when not yet in comparison mode and comparison is allowed
+                    // Show "Compare" button only when not yet in comparison mode and comparison is allowed
                     if !viewModel.isComparisonMode && allowsComparison {
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showAddMenu.toggle()
                             }
                         } label: {
-                            Image(systemName: "plus")
-                                .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
-                                .foregroundStyle(Color.App.textDark)
-                                .padding(10)
-                                .background(Circle().fill(Color.white.opacity(0.85)))
+                            Text("Compare")
+                                .font(Font.App.nunitoRounded(size: 14, weight: .bold))
+                                .foregroundStyle(Color.App.darkBlue)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.9))
+                                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+                                )
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -159,15 +171,16 @@ struct ValidationResultView: View {
             if showAddMenu {
                 addPopupMenu
                     .padding(.trailing, 20)
-                    .padding(.bottom, 100)
+                    .padding(.top, 52)
                     .transition(.scale(scale: 0.85, anchor: .topTrailing).combined(with: .opacity))
+                    .zIndex(100)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showAddMenu)
         .animation(.easeInOut(duration: 0.3), value: viewModel.isComparisonMode)
         .contentShape(Rectangle())
-        .onTapGesture {
-            if showAddMenu { withAnimation { showAddMenu = false } }
+        .onAppear {
+            isPersonalizedState = AppDataService.shared.hasCompletedPersonalization
         }
         .sheet(isPresented: $viewModel.showIngredientSheet) {
             IngredientDetailSheetView(
@@ -177,6 +190,12 @@ struct ValidationResultView: View {
                 errorMessage: viewModel.ingredientDetailError
             )
         }
+        .fullScreenCover(isPresented: $showPersonalizationPage) {
+            PersonalizationView { _ in
+                showPersonalizationPage = false
+                isPersonalizedState = AppDataService.shared.hasCompletedPersonalization
+            }
+        }
     }
 
     // MARK: - Single Product Header Image & Brand/Title
@@ -184,27 +203,32 @@ struct ValidationResultView: View {
     @ViewBuilder
     private func singleProductHeader(result: ValidationResult) -> some View {
         VStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.App.lightBlue.opacity(0.15))
+            ZStack(alignment: .topTrailing) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.App.lightBlue.opacity(0.15))
 
-                if let imageURL = result.imageURL, let url = URL(string: imageURL) {
-                    CachedAsyncImage(url: url) {
+                    if let imageURL = result.imageURL, let url = URL(string: imageURL) {
+                        CachedAsyncImage(url: url) {
+                            placeholderImage
+                        }
+                        .scaledToFit()
+                        .padding(12)
+                    } else {
                         placeholderImage
                     }
-                    .scaledToFit()
-                    .padding(12)
-                } else {
-                    placeholderImage
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: 160)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.App.sunnyYellow, lineWidth: 2)
+                )
+
+                HeartBookmarkButton(name: result.productName, brand: result.brand, imageURL: result.imageURL)
+                    .padding(10)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 160)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.App.lightBlue.opacity(0.5), lineWidth: 1.5)
-            )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(result.brand)
@@ -260,6 +284,9 @@ struct ValidationResultView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.App.sunnyYellow, lineWidth: 2)
                 )
+
+                HeartBookmarkButton(name: name, brand: brand, imageURL: imageURL ?? comparisonImageURL(for: name))
+                    .padding(8)
             }
 
             Text(brand)
@@ -703,14 +730,17 @@ struct ValidationResultView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.top, 4)
                         }
+                        
                         .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 16)
             }
-            .opacity(result.isSuited ? 1.0 : 0.45)
+            .blur(radius: hasCompletedPersonalization ? 0 : 4)
+            .opacity(hasCompletedPersonalization ? 1.0 : 0.45)
+            .allowsHitTesting(hasCompletedPersonalization)
 
-            if !result.isSuited {
+            if !hasCompletedPersonalization {
                 quizOverlayPill
             }
         }
@@ -786,9 +816,11 @@ struct ValidationResultView: View {
                     }
                 }
             }
-            .opacity(first.isSuited && second.isSuited ? 1.0 : 0.45)
+            .blur(radius: hasCompletedPersonalization ? 0 : 4)
+            .opacity(hasCompletedPersonalization ? 1.0 : 0.45)
+            .allowsHitTesting(hasCompletedPersonalization)
 
-            if !first.isSuited || !second.isSuited {
+            if !hasCompletedPersonalization {
                 quizOverlayPill
             }
         }
@@ -801,40 +833,49 @@ struct ValidationResultView: View {
         let displayLimit = 2
         let visibleItems = isConcernsExpanded ? result.concernItems : Array(result.concernItems.prefix(displayLimit))
 
-        ValidationCardView(title: "Concerns") {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(visibleItems) { item in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.title)
-                            .font(Font.App.nunitoRounded(size: 14, weight: .bold))
-                            .foregroundStyle(Color.App.darkBlue)
-                        Text(item.description)
-                            .font(Font.App.nunitoRounded(size: 12, weight: .medium))
-                            .foregroundStyle(Color.gray)
+        ZStack(alignment: .center) {
+            ValidationCardView(title: "Concerns") {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(visibleItems) { item in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                                .font(Font.App.nunitoRounded(size: 14, weight: .bold))
+                                .foregroundStyle(Color.App.darkBlue)
+                            Text(item.description)
+                                .font(Font.App.nunitoRounded(size: 12, weight: .medium))
+                                .foregroundStyle(Color.gray)
+                        }
                     }
-                }
 
-                if result.concernItems.count > displayLimit {
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            isConcernsExpanded.toggle()
+                    if result.concernItems.count > displayLimit {
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                isConcernsExpanded.toggle()
+                            }
+                        } label: {
+                            HStack {
+                                Text(isConcernsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(result.concernItems.count - displayLimit)+)")
+                                    .font(Font.App.nunitoRounded(size: 13, weight: .bold))
+                                    .foregroundStyle(Color.App.mediumBlue)
+                                Image(systemName: isConcernsExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.App.mediumBlue)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 4)
                         }
-                    } label: {
-                        HStack {
-                            Text(isConcernsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(result.concernItems.count - displayLimit)+)")
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.mediumBlue)
-                            Image(systemName: isConcernsExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color.App.mediumBlue)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 4)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
+            .blur(radius: hasCompletedPersonalization ? 0 : 4)
+            .opacity(hasCompletedPersonalization ? 1.0 : 0.45)
+            .allowsHitTesting(hasCompletedPersonalization)
+
+            if !hasCompletedPersonalization {
+                quizOverlayPill
+            }
         }
     }
 
@@ -846,65 +887,74 @@ struct ValidationResultView: View {
 
         let maxCount = max(first.concernItems.count, second.concernItems.count)
 
-        ValidationCardView(title: "Concerns") {
-            VStack(spacing: 10) {
-                HStack(alignment: .top, spacing: 0) {
-                    // Left Column
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(visibleFirst) { item in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.title)
-                                    .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                    .foregroundStyle(Color.App.darkBlue)
-                                Text(item.description)
-                                    .font(Font.App.nunitoRounded(size: 11, weight: .medium))
-                                    .foregroundStyle(Color.gray)
+        ZStack(alignment: .center) {
+            ValidationCardView(title: "Concerns") {
+                VStack(spacing: 10) {
+                    HStack(alignment: .top, spacing: 0) {
+                        // Left Column
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(visibleFirst) { item in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.title)
+                                        .font(Font.App.nunitoRounded(size: 13, weight: .bold))
+                                        .foregroundStyle(Color.App.darkBlue)
+                                    Text(item.description)
+                                        .font(Font.App.nunitoRounded(size: 11, weight: .medium))
+                                        .foregroundStyle(Color.gray)
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Rectangle()
-                        .fill(Color.App.sunnyYellow.opacity(0.6))
-                        .frame(width: 1.5)
+                        Rectangle()
+                            .fill(Color.App.sunnyYellow.opacity(0.6))
+                            .frame(width: 1.5)
 
-                    // Right Column
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(visibleSecond) { item in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.title)
-                                    .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                    .foregroundStyle(Color.App.darkBlue)
-                                Text(item.description)
-                                    .font(Font.App.nunitoRounded(size: 11, weight: .medium))
-                                    .foregroundStyle(Color.gray)
+                        // Right Column
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(visibleSecond) { item in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.title)
+                                        .font(Font.App.nunitoRounded(size: 13, weight: .bold))
+                                        .foregroundStyle(Color.App.darkBlue)
+                                    Text(item.description)
+                                        .font(Font.App.nunitoRounded(size: 11, weight: .medium))
+                                        .foregroundStyle(Color.gray)
+                                }
                             }
                         }
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.horizontal, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
 
-                if maxCount > displayLimit {
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            isConcernsExpanded.toggle()
+                    if maxCount > displayLimit {
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                isConcernsExpanded.toggle()
+                            }
+                        } label: {
+                            HStack {
+                                Text(isConcernsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(maxCount - displayLimit)+)")
+                                    .font(Font.App.nunitoRounded(size: 13, weight: .bold))
+                                    .foregroundStyle(Color.App.mediumBlue)
+                                Image(systemName: isConcernsExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.App.mediumBlue)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 4)
                         }
-                    } label: {
-                        HStack {
-                            Text(isConcernsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(maxCount - displayLimit)+)")
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.mediumBlue)
-                            Image(systemName: isConcernsExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color.App.mediumBlue)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 4)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+            }
+            .blur(radius: hasCompletedPersonalization ? 0 : 4)
+            .opacity(hasCompletedPersonalization ? 1.0 : 0.45)
+            .allowsHitTesting(hasCompletedPersonalization)
+
+            if !hasCompletedPersonalization {
+                quizOverlayPill
             }
         }
     }
@@ -941,7 +991,11 @@ struct ValidationResultView: View {
 
     private var quizOverlayPill: some View {
         Button {
-            // Navigate to personal quiz flow
+            if allowsComparison {
+                viewModel.openPersonalization()
+            } else {
+                showPersonalizationPage = true
+            }
         } label: {
             Text("Selesaikan Kuis Personalisasi")
                 .font(Font.App.nunitoRounded(size: 13, weight: .bold))
@@ -984,7 +1038,7 @@ struct ValidationResultView: View {
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass").font(.system(size: 15))
-                    Text("Lainnya...").font(Font.App.nunitoRounded(size: 16, weight: .medium))
+                    Text("Search").font(Font.App.nunitoRounded(size: 16, weight: .medium))
                 }
                 .foregroundStyle(Color.App.textDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1005,6 +1059,42 @@ struct ValidationResultView: View {
 private extension String {
     func ifEmpty(_ fallback: String) -> String {
         trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? fallback : self
+    }
+}
+
+// MARK: - Heart Bookmark Button for Product Cards
+
+struct HeartBookmarkButton: View {
+    let name: String
+    let brand: String
+    let imageURL: String?
+
+    @ObservedObject private var store = ProductHistoryStore.shared
+
+    private var isSaved: Bool {
+        store.isPicked(name: name, brand: brand)
+    }
+
+    var body: some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            let item = PickedProductItem(name: name, brand: brand, imageURL: imageURL)
+            store.togglePickedProduct(item)
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.92))
+                    .frame(width: 32, height: 32)
+                    .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
+
+                Image(systemName: isSaved ? "suit.heart.fill" : "suit.heart")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(isSaved ? Color.red : Color(red: 0.20, green: 0.35, blue: 0.50))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isSaved ? "Remove from Picked Products" : "Save to Picked Products")
     }
 }
 
