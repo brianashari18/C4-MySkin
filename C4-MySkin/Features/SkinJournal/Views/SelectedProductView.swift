@@ -88,7 +88,7 @@ struct SelectedProductView: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 
-                                Text("to see if your skin has any reaction like purging or breakout")
+                                Text("See how your skin responds to the product. Including any redness, irritation, or other reactions.")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(Color(red: 0.45, green: 0.55, blue: 0.65))
                                     .fixedSize(horizontal: false, vertical: true)
@@ -100,7 +100,7 @@ struct SelectedProductView: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 
-                                Text("to see the progress and improvements on your skin condition")
+                                Text("See the product’s best results of consistent use, following the recommended usage.")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundStyle(Color(red: 0.45, green: 0.55, blue: 0.65))
                                     .fixedSize(horizontal: false, vertical: true)

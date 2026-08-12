@@ -14,9 +14,22 @@
 		31301E343025DF77008B7ED3 /* C4-MySkin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "C4-MySkin.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		AD17288B302D1A7500AB7073 /* Exceptions for "C4-MySkin" folder in "Compile Sources" phase from "C4-MySkin" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 31301E303025DF77008B7ED3 /* Sources */;
+			membershipExceptions = (
+				Resources/.env,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		31301E363025DF77008B7ED3 /* C4-MySkin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AD17288B302D1A7500AB7073 /* Exceptions for "C4-MySkin" folder in "Compile Sources" phase from "C4-MySkin" target */,
+			);
 			path = "C4-MySkin";
 			sourceTree = "<group>";
 		};
@@ -270,7 +283,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 997HLR2HAG;
+				DEVELOPMENT_TEAM = 55V77DK95N;
 				ENABLE_DEBUG_DYLIB = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -305,7 +318,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 997HLR2HAG;
+				DEVELOPMENT_TEAM = 55V77DK95N;
 				ENABLE_DEBUG_DYLIB = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
