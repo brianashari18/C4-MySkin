@@ -47,14 +47,16 @@ struct PhotoTimelapseCard: View {
             } else {
                 // Crossfade semua frame — foto aktif opacity 1 menutupi sisanya
                 ForEach(Array(frames.enumerated()), id: \.element.photo.id) { i, frame in
-                    Image(uiImage: frame.image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 26))
-                        .opacity(i == index ? 1 : 0)
-                        .allowsHitTesting(false)
+                    GeometryReader { geo in
+                        Image(uiImage: frame.image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 26))
+                    .opacity(i == index ? 1 : 0)
+                    .allowsHitTesting(false)
                 }
 
                 // Produk terpilih — KIRI ATAS

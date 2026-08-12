@@ -12,6 +12,7 @@ struct JourneyMainView: View {
     let journey: SkincareJourney
     let isJourneyActive: Bool
     let onAddImage: () -> Void
+    let onStartAssessment: () -> Void
     let onChooseProduct: () -> Void
     let onViewDetail: () -> Void
     let onViewHistory: () -> Void
@@ -20,7 +21,8 @@ struct JourneyMainView: View {
     init(
         journey: SkincareJourney,
         isJourneyActive: Bool = false,
-        onAddImage: @escaping () -> Void,
+        onAddImage: @escaping () -> Void = {},
+        onStartAssessment: @escaping () -> Void = {},
         onChooseProduct: @escaping () -> Void = {},
         onViewDetail: @escaping () -> Void = {},
         onViewHistory: @escaping () -> Void = {},
@@ -29,6 +31,7 @@ struct JourneyMainView: View {
         self.journey = journey
         self.isJourneyActive = isJourneyActive
         self.onAddImage = onAddImage
+        self.onStartAssessment = onStartAssessment
         self.onChooseProduct = onChooseProduct
         self.onViewDetail = onViewDetail
         self.onViewHistory = onViewHistory
@@ -74,63 +77,41 @@ struct JourneyMainView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
-                        // Photo box: empty state placeholder vs timelapse INLINE
-                        // (auto-play 2×, tanggal kanan bawah, produk kiri atas)
+                        // Photo box: empty state placeholder ("no photos yet") vs captured photo / timelapse
                         if journey.progressPhotos.isEmpty {
                             ProgressPhotoCard(imageName: nil)
-                                .padding(.horizontal, 28)
+                                .padding(.horizontal, 24)
                                 .padding(.top, 16)
                         } else {
                             PhotoTimelapseCard(
                                 photos: journey.progressPhotos,
                                 productName: journey.product.name
                             )
-                            .padding(.horizontal, 28)
+                            .padding(.horizontal, 24)
                             .padding(.top, 16)
                         }
 
-                        // Add Photos Pill Button
-                        Button(action: {
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-                            if isJourneyActive {
-                                onAddImage()
-                            } else {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    showNoJourneyPrompt = true
-                                }
-                            }
-                        }) {
-                            Text("Add Photos")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(Color.white)
-                                .frame(width: 200, height: 48)
-                                .background(Color(red: 0.38, green: 0.61, blue: 0.93))
-                                .clipShape(Capsule())
-                                .shadow(color: Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.3), radius: 6, x: 0, y: 3)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Add Photos")
-                        .padding(.top, 4)
-
-                        // Bottom Card: Add Skincare Journey (Empty) vs Active & Upcoming Milestone Cards
-                        if isJourneyActive {
+                        // Middle Container: Milestone Card (bila foto sudah di-capture atau journey aktif) vs AddSkincareJourneyCard (bila awal)
+                        let isMilestoneActive = isJourneyActive || !journey.progressPhotos.isEmpty
+                        if isMilestoneActive {
                             Divider()
                                 .background(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.3))
                                 .padding(.horizontal, 24)
                                 .padding(.top, 8)
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Current Skincare Journey")
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                            if !journey.journalEntries.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Current Skincare Journey")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
 
-                                Text(journey.product.name)
-                                    .font(.system(size: 19, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                    Text(journey.product.name)
+                                        .font(.system(size: 19, weight: .bold))
+                                        .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 24)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
 
                             VStack(spacing: 16) {
                                 Button(action: {
@@ -139,18 +120,20 @@ struct JourneyMainView: View {
                                     if !journey.journalEntries.isEmpty {
                                         onViewDetail()
                                     } else {
-                                        onAddImage()
+                                        onStartAssessment()
                                     }
                                 }) {
                                     ActiveMilestoneCard(journey: journey)
                                 }
                                 .buttonStyle(.plain)
 
-                                UpcomingMilestoneCard(milestoneNumber: 2)
+                            if !journey.journalEntries.isEmpty {
+                                UpcomingMilestoneCard(milestoneNumber: 2, startDate: journey.startDate)
+                            }
                             }
                             .padding(.horizontal, 24)
                         } else {
-                            // Empty state: klik container → pilih produk dulu → balik ke halaman ini
+                            // Empty / Initial state: container kuning "add your skincare journey"
                             VStack(spacing: 16) {
                                 AddSkincareJourneyCard(onTap: onChooseProduct)
 
@@ -160,7 +143,40 @@ struct JourneyMainView: View {
                                 }
                             }
                             .padding(.horizontal, 24)
-                            .padding(.top, 12)
+                            .padding(.top, 8)
+                        }
+
+                        // Start Journey CTA Button: Hanya tampil SEBELUM config awal jurnal diselesaikan & di-save!
+                        if journey.journalEntries.isEmpty {
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                if isMilestoneActive {
+                                    onStartAssessment()
+                                }
+                            }) {
+                                Text("Start Journey")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundStyle(Color.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 50)
+                                    .background(
+                                        isMilestoneActive
+                                            ? Color(red: 0.38, green: 0.61, blue: 0.93)
+                                            : Color(red: 0.72, green: 0.76, blue: 0.82)
+                                    )
+                                    .clipShape(Capsule())
+                                    .shadow(
+                                        color: isMilestoneActive
+                                            ? Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.3)
+                                            : Color.clear,
+                                        radius: 6, x: 0, y: 3
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!isMilestoneActive)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 8)
                         }
 
                         Spacer(minLength: 24)
@@ -203,7 +219,7 @@ private struct AddSkincareJourneyCard: View {
                     .foregroundStyle(Color(red: 0.15, green: 0.33, blue: 0.50))
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 150)
+            .frame(height: 195)
             .background(
                 RoundedRectangle(cornerRadius: 24)
                     .fill(Color(red: 0.99, green: 0.90, blue: 0.66))
@@ -235,9 +251,10 @@ private struct NoJourneyToastCard: View {
     }
 }
 
-// MARK: - Upcoming / Locked Milestone Card (Milestone #2)
+// MARK: - Upcoming / Locked Milestone Card (Milestone #2 - 4 Flags)
 private struct UpcomingMilestoneCard: View {
     let milestoneNumber: Int
+    var startDate: Date = Date()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -247,61 +264,88 @@ private struct UpcomingMilestoneCard: View {
                 .foregroundStyle(Color.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
-                .background(Color(red: 0.45, green: 0.45, blue: 0.45))
+                .background(Color(red: 0.55, green: 0.62, blue: 0.70))
                 .clipShape(Capsule())
 
             // 2. Milestone Title (Muted Dark Gray)
             Text("Milestone #\(milestoneNumber)")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color(red: 0.40, green: 0.40, blue: 0.40))
+                .foregroundStyle(Color(red: 0.35, green: 0.42, blue: 0.50))
 
-            // 3. Timeline Row: Jar Icon --- Dashed Line --- Flags (Locked Gray)
-            HStack(spacing: 8) {
+            // 3. Timeline Layout: 4 Flags (Start: +2 minggu dari M1 start, Finish: in 8 weeks)
+            HStack(alignment: .top, spacing: 4) {
                 // Jar icon node (gray)
-                ZStack {
-                    Circle()
-                        .fill(Color(white: 0.65))
-                        .frame(width: 36, height: 36)
+                VStack(spacing: 4) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.65, green: 0.72, blue: 0.80))
+                            .frame(width: 44, height: 44)
 
-                    Image(systemName: "jar.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Color.white)
+                        Image(systemName: "jar.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.white)
+                    }
+
+                    VStack(spacing: 1) {
+                        Text("Start")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(formattedDate(startDate.addingTimeInterval(14 * 86400)))
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(Color(red: 0.55, green: 0.62, blue: 0.70))
                 }
 
-                DashedGrayConnector()
+                Spacer(minLength: 0)
 
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color(white: 0.65))
+                ForEach(1...4, id: \.self) { flagIndex in
+                    HStack(spacing: 3) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(Color(red: 0.78, green: 0.83, blue: 0.90))
+                                .frame(width: 8, height: 4)
+                        }
+                    }
+                    .frame(height: 44)
 
-                DashedGrayConnector()
+                    Spacer(minLength: 0)
 
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color(white: 0.65))
+                    VStack(spacing: 4) {
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(Color(red: 0.65, green: 0.72, blue: 0.80))
+                            .frame(height: 44)
 
-                DashedGrayConnector()
+                        if flagIndex == 4 {
+                            VStack(spacing: 1) {
+                                Text("Results")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("in 8 weeks")
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .foregroundStyle(Color(red: 0.55, green: 0.62, blue: 0.70))
+                        }
+                    }
 
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color(white: 0.65))
-
-                DashedGrayConnector()
-
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(Color(white: 0.65))
+                    if flagIndex < 4 {
+                        Spacer(minLength: 0)
+                    }
+                }
             }
-            .frame(height: 36)
         }
         .padding(18)
         .frame(maxWidth: .infinity)
-        .frame(height: 150)
+        .frame(height: 195) // SAKLAK: 195pt identik dengan Milestone 1
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(red: 0.72, green: 0.72, blue: 0.72))
+                .fill(Color(red: 0.88, green: 0.90, blue: 0.93))
                 .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
         )
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter.string(from: date)
     }
 }
 
@@ -388,19 +432,53 @@ private struct HistoryButton: View {
     }
 }
 
+private extension SkincareJourney {
+    static var sampleMilestone1: SkincareJourney {
+        var j = SkincareJourney(product: SkincareProduct.samples[0])
+        j.journalEntries = [
+            JournalEntry(date: Date(), note: "Awal pemakaian produk baru.")
+        ]
+        j.progressPhotos = [
+            ProgressPhoto(date: Date(), imageName: "sample_1", milestoneOrder: 1)
+        ]
+        return j
+    }
+
+    static var sampleMilestone2: SkincareJourney {
+        var j = SkincareJourney(product: SkincareProduct.samples[0])
+        if !j.milestones.isEmpty {
+            j.milestones[0].isCompleted = true
+        }
+        j.journalEntries = [
+            JournalEntry(date: Date(), note: "Progress hari ini bagus banget! Kulit terasa lembab."),
+            JournalEntry(date: Date().addingTimeInterval(86400 * 3), note: "Sore ini habis panas-panasan tapi tidak iritasi.")
+        ]
+        j.progressPhotos = [
+            ProgressPhoto(date: Date(), imageName: "sample_1", milestoneOrder: 1),
+            ProgressPhoto(date: Date().addingTimeInterval(86400 * 3), imageName: "sample_2", milestoneOrder: 2)
+        ]
+        return j
+    }
+}
+
 #Preview("Empty State") {
     JourneyMainView(
         journey: SkincareJourney(product: SkincareProduct.samples[0]),
-        isJourneyActive: false,
-        onAddImage: {}
+        isJourneyActive: false
     )
 }
 
-#Preview("Active State") {
+#Preview("Active State (Milestone 1)") {
     JourneyMainView(
-        journey: SkincareJourney(product: SkincareProduct.samples[0]),
-        isJourneyActive: true,
-        onAddImage: {}
+        journey: .sampleMilestone1,
+        isJourneyActive: true
+    )
+}
+
+#Preview("Milestone 2 State") {
+    JourneyMainView(
+        journey: .sampleMilestone2,
+        isJourneyActive: true
     )
 }
 

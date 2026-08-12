@@ -37,22 +37,31 @@ struct JourneyDetailView: View {
                 .padding(.top, 8)
 
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("Selected Product")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                    VStack(spacing: 20) {
+                        // Timeline Progress Indicator Bar (hidden when opened from calendar view)
+                        if !hideProgressBar {
+                            JournalTimelineHeader(
+                                milestoneNumber: currentMilestoneOrder,
+                                totalEntries: entries.count,
+                                selectedIndex: $selectedIndex
+                            )
                             .padding(.top, 12)
+                        }
 
-                        SelectedProductCard(product: product)
-
-                        Text("You'll go through 2 milestones")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                            .padding(.top, 8)
-
-                        VStack(alignment: .leading, spacing: 20) {
-                            ForEach(Milestone.defaultMilestones) { milestone in
-                                MilestoneDetailRow(milestone: milestone)
+                        // Photo Frame Row with Left & Right Paging Arrow Buttons
+                        HStack(spacing: 12) {
+                            // Left Arrow Button
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
+                                withAnimation {
+                                    selectedIndex = max(0, selectedIndex - 1)
+                                }
+                            }) {
+                                Image(systemName: "chevron.left.circle.fill")
+                                    .font(.system(size: 32, weight: .semibold))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                    .opacity(selectedIndex > 0 ? 1.0 : 0.35)
                             }
                         }
 
@@ -111,50 +120,121 @@ private struct SelectedProductCard: View {
     }
 }
 
-private struct MilestoneDetailRow: View {
-    let milestone: Milestone
+// MARK: - Journal Timeline Header Component (Interaktif per Flag)
+private struct JournalTimelineHeader: View {
+    let milestoneNumber: Int
+    let totalEntries: Int
+    @Binding var selectedIndex: Int
+
+    private var nodeCount: Int {
+        milestoneNumber == 2 ? 5 : max(2, min(5, totalEntries))
+    }
+
+    private var progressRatio: Double {
+        guard nodeCount > 1 else { return 0 }
+        let current = min(selectedIndex, nodeCount - 1)
+        return Double(current) / Double(nodeCount - 1)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Milestone \(milestone.order)")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+        VStack(spacing: 4) {
+            ZStack {
+                // Background Progress Bar Slider Track
+                GeometryReader { geometry in
+                    let totalWidth = geometry.size.width
+                    let fillWidth = totalWidth * progressRatio
 
-            Text(milestone.title)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.20))
+                            .frame(height: 6)
 
-            Text("to see the\nblablabla\nblablabla")
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(Color(red: 0.45, green: 0.52, blue: 0.60))
-                .lineSpacing(2)
-                .padding(.top, 2)
+                        Capsule()
+                            .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
+                            .frame(width: max(0, fillWidth), height: 6)
+
+                        ZStack {
+                            Circle()
+                                .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                .frame(width: 14, height: 14)
+
+                            Circle()
+                                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.6), lineWidth: 3)
+                                .frame(width: 20, height: 20)
+                        }
+                        .offset(x: max(0, min(totalWidth - 10, fillWidth - 10)))
+                    }
+                    .frame(width: totalWidth, height: 40, alignment: .center)
+                }
+                .padding(.horizontal, 16)
+
+                // Timeline Icon Nodes (Clickable Flag Buttons)
+                HStack {
+                    ForEach(0..<nodeCount, id: \.self) { nodeIndex in
+                        let iconName = nodeIndex == 0 ? "jar.fill" : "flag.fill"
+                        let isSelected = nodeIndex == selectedIndex
+                        let isAvailable = nodeIndex < totalEntries
+
+                        Button(action: {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            let targetIndex = min(nodeIndex, max(0, totalEntries - 1))
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                selectedIndex = targetIndex
+                            }
+                        }) {
+                            CircleIconNode(
+                                iconName: iconName,
+                                isSelected: isSelected,
+                                isAvailable: isAvailable
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        if nodeIndex < nodeCount - 1 {
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+            }
+            .frame(height: 40)
         }
+        .padding(.horizontal, 24)
     }
 }
 
-private struct TipCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("for the best results, take\na progress photo \(Text("every 2 weeks").font(.system(size: 16, weight: .bold)).foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42)))")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-            .lineSpacing(2)
+private struct CircleIconNode: View {
+    let iconName: String
+    let isSelected: Bool
+    let isAvailable: Bool
 
-            Text("We'll remind you when it's time for each check in")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color(red: 0.60, green: 0.65, blue: 0.72))
-                .padding(.top, 2)
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    isSelected
+                        ? Color(red: 0.16, green: 0.35, blue: 0.54)
+                        : (isAvailable ? Color(red: 0.74, green: 0.83, blue: 0.93) : Color(red: 0.88, green: 0.90, blue: 0.93))
+                )
+                .frame(width: isSelected ? 36 : 30, height: isSelected ? 36 : 30)
+
+            if isSelected {
+                Circle()
+                    .stroke(Color(red: 0.38, green: 0.61, blue: 0.93), lineWidth: 2.5)
+                    .frame(width: 42, height: 42)
+            }
+
+            Image(systemName: iconName)
+                .font(.system(size: isSelected ? 15 : 13, weight: .bold))
+                .foregroundStyle(
+                    isSelected
+                        ? Color.white
+                        : (isAvailable ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.60, green: 0.68, blue: 0.76))
+                )
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
-        )
-        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+        .frame(width: 42, height: 42)
+        .contentShape(Rectangle())
     }
 }
 

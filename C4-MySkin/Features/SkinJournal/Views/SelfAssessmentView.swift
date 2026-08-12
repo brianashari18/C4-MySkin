@@ -169,7 +169,7 @@ struct SelfAssessmentView: View {
     // MARK: - Step 2: How It Feels (Gambar 4)
     private var stepTwoContent: some View {
         VStack(spacing: 20) {
-            Text("How has your skin reacted\nto this product over the past\n2 weeks?")
+            Text("How has your skin reacted\nto this product lately?")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
                 .multilineTextAlignment(.center)
