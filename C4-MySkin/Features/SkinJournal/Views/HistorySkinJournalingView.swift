@@ -83,25 +83,28 @@ struct HistorySkinJournalingView: View {
     }
 
     private func itemData(for journey: SkincareJourney, index: Int) -> HistoryItemData {
-        let m1 = journey.milestones.first?.isCompleted ?? true
+        let m1 = journey.milestones.first?.isCompleted ?? false
         let m2 = journey.milestones.count > 1 ? journey.milestones[1].isCompleted : false
 
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "id_ID")
-        formatter.dateFormat = "dd MMMM yyyy"
+        formatter.dateFormat = "d MMMM yyyy"
 
         let startStr = formatter.string(from: journey.startDate)
-        let endDate = journey.milestones.last?.completedDate ?? journey.startDate.addingTimeInterval(28 * 86400)
+        let endDate = journey.endDate ?? (journey.milestones.last?.completedDate ?? journey.startDate.addingTimeInterval(28 * 86400))
         let endStr = formatter.string(from: endDate)
+
+        let ratingVal = journey.rating ?? ((m1 && m2) ? 5 : (m1 ? 3 : 1))
 
         return HistoryItemData(
             dateRange: "\(startStr) - \(endStr)",
             productName: journey.product.name,
             brandName: journey.product.brand,
-            rating: (m1 && m2) ? 5 : (m1 ? 3 : 1),
+            rating: ratingVal,
             milestone1Completed: m1,
             milestone2Completed: m2,
-            iconName: journey.product.iconName ?? "jar.fill"
+            iconName: journey.product.iconName ?? "jar.fill",
+            imageURL: journey.product.imageURL
         )
     }
 
@@ -114,7 +117,8 @@ struct HistorySkinJournalingView: View {
                 rating: 5,
                 milestone1Completed: true,
                 milestone2Completed: true,
-                iconName: "jar.fill"
+                iconName: "jar.fill",
+                imageURL: nil
             ),
             HistoryItemData(
                 dateRange: "12 Mei - 12 Juli 2026",
@@ -123,7 +127,8 @@ struct HistorySkinJournalingView: View {
                 rating: 3,
                 milestone1Completed: true,
                 milestone2Completed: false,
-                iconName: "jar.fill"
+                iconName: "jar.fill",
+                imageURL: nil
             ),
             HistoryItemData(
                 dateRange: "12 Maret - 12 April 2026",
@@ -132,7 +137,8 @@ struct HistorySkinJournalingView: View {
                 rating: 4,
                 milestone1Completed: true,
                 milestone2Completed: true,
-                iconName: "jar.fill"
+                iconName: "jar.fill",
+                imageURL: nil
             ),
             HistoryItemData(
                 dateRange: "12 Januari - 15 Januari 2026",
@@ -141,7 +147,8 @@ struct HistorySkinJournalingView: View {
                 rating: 1,
                 milestone1Completed: false,
                 milestone2Completed: false,
-                iconName: "jar.fill"
+                iconName: "jar.fill",
+                imageURL: nil
             )
         ]
     }
@@ -156,6 +163,7 @@ private struct HistoryItemData {
     let milestone1Completed: Bool
     let milestone2Completed: Bool
     let iconName: String
+    let imageURL: String?
 }
 
 // MARK: - History Product Card Row Component
@@ -193,9 +201,26 @@ private struct HistoryProductRow: View {
                             .fill(Color(red: 0.74, green: 0.88, blue: 0.98))
                             .frame(width: 95, height: 95)
 
-                        Image(systemName: item.iconName)
-                            .font(.system(size: 42))
-                            .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                        if let imageURLStr = item.imageURL, let url = URL(string: imageURLStr) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 75, height: 75)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                default:
+                                    Image(systemName: item.iconName)
+                                        .font(.system(size: 42))
+                                        .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                }
+                            }
+                        } else {
+                            Image(systemName: item.iconName)
+                                .font(.system(size: 42))
+                                .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                        }
                     }
 
                     // Product Details Column
