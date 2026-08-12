@@ -50,7 +50,7 @@ struct PersonalizationView: View {
                 ZStack(alignment: .bottom) {
                     VStack(spacing: 32) {
                         content
-                            .padding(.top, viewModel.phase == .skinSensitivityAssessment ? 8 : 34)
+                            .padding(.top, viewModel.phase == .skinSensitivityAssessment ? 20 : 34)
 
                         Spacer(minLength: 148)
                     }
@@ -59,8 +59,8 @@ struct PersonalizationView: View {
 
                     if !finishesAfterSensitivity || viewModel.phase == .skinTypeSelection {
                         PersonalizationMascotFooter(
-                            noteText: "",
-                            showsNote: false,
+                            noteText: viewModel.mascotNoteText,
+                            showsNote: !finishesAfterSensitivity && !viewModel.phase.isResult,
                             mascotAnimation: finishesAfterSensitivity ? .idle : .peekHead
                         )
                         .id(viewModel.phase)
@@ -164,6 +164,12 @@ struct PersonalizationView: View {
                 onComplete(viewModel.result)
             }
         }
+    }
+}
+
+private extension PersonalizationPhase {
+    var isResult: Bool {
+        self == .skinTypeResult || self == .skinSensitivityResult || self == .summary
     }
 }
 
@@ -275,6 +281,7 @@ private struct SkinSensitivityAssessmentContent: View {
                 lowLabel: viewModel.sensitivityQuestion.lowLabel,
                 highLabel: viewModel.sensitivityQuestion.highLabel
             )
+            .offset(y: -45)
         }
     }
 }
@@ -448,34 +455,15 @@ private struct SummaryContent: View {
     let onComplete: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            Text("Kondisi kulitmu...")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(OnboardingStyle.primaryBlue.opacity(0.66))
-
-            VStack(spacing: 8) {
-                if viewModel.selectedConcerns.isEmpty {
-                    Text("Tidak ada")
-                        .font(OnboardingStyle.roundedFont(size: 18))
-                } else {
-                    ForEach(Array(viewModel.selectedConcerns).sorted { $0.rawValue < $1.rawValue }) { concern in
-                        Text(concern.rawValue)
-                            .font(OnboardingStyle.roundedFont(size: 17))
-                    }
-                }
-            }
-            .foregroundStyle(OnboardingStyle.primaryBlue)
-            .multilineTextAlignment(.center)
-
+        VStack(spacing: 2) {
+            Text("Selesai")
+            Text("Thank you!")
         }
+        .font(OnboardingStyle.roundedFont(size: 52))
+            .foregroundStyle(OnboardingStyle.primaryBlue)
+        .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
-        .padding(
-            .top,
-            max(
-                8,
-                48 - CGFloat(max(0, viewModel.selectedConcerns.count - 3)) * 6
-            )
-        )
+        .padding(.top, 130)
         .contentShape(Rectangle())
         .onTapGesture(perform: onComplete)
     }
@@ -488,7 +476,7 @@ private struct SummaryContent: View {
 private extension PersonalizationPhase {
     var showsSideNavigation: Bool {
         switch self {
-        case .skinTypeResult:
+        case .skinTypeResult, .skinSensitivityResult, .summary:
             false
         default:
             true

@@ -59,6 +59,10 @@ final class PersonalizationViewModel {
         noConcernPageIndexes.contains(concernPageIndex)
     }
 
+    var hasSelectionForCurrentConcernPage: Bool {
+        isNoConcernSelectedForCurrentPage ||
+            concernPage.concerns.contains { selectedConcerns.contains($0) }
+    }
     var mascotNoteText: String {
         guard phase == .skinTypeAssessment || phase == .skinTypeConfirmation || phase == .skinSensitivityAssessment || phase == .skinConcern else {
             return "Gapapa kok kalau belum yakin"
@@ -121,8 +125,10 @@ final class PersonalizationViewModel {
             canContinueSkinTypeAssessment
         case .skinTypeConfirmation:
             selectedSkinType != nil
-        case .skinTypeResult, .skinSensitivityAssessment, .skinSensitivityResult, .skinConcern, .summary:
+        case .skinTypeResult, .skinSensitivityAssessment, .skinSensitivityResult, .summary:
             true
+        case .skinConcern:
+            hasSelectionForCurrentConcernPage
         case .skinSensitivitySelection:
             selectedSkinSensitivity != nil
         }
@@ -306,7 +312,6 @@ final class PersonalizationViewModel {
             selectedConcerns.remove(concern)
         }
         noConcernPageIndexes.insert(concernPageIndex)
-        advanceConcernPage()
     }
 
     func finishConcern() {
@@ -373,6 +378,8 @@ final class PersonalizationViewModel {
     }
 
     private func advanceConcernPage() {
+        guard hasSelectionForCurrentConcernPage else { return }
+
         if concernPageIndex < PersonalizationContent.concernPages.count - 1 {
             concernPageIndex += 1
         } else {

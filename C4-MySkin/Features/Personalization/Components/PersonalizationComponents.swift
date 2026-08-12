@@ -21,14 +21,16 @@ struct PersonalizationProgressHeader: View {
             let milestoneSpan = milestoneEnd - milestoneStart
             let lastIndex = max(steps.count - 1, 1)
             let milestoneX = milestoneStart + milestoneSpan * CGFloat(activeIndex) / CGFloat(lastIndex)
+            let milestoneRadius: CGFloat = 11
+            let pendingMilestoneGap: CGFloat = -10
             let progressWidth = activeIndex == lastIndex && fillsCurrentMilestone
                 ? trackWidth
-                : milestoneX - (section == .skinConcern ? 11 : 0)
+                : milestoneX - (fillsCurrentMilestone ? 0 : milestoneRadius + pendingMilestoneGap)
 
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color.white.opacity(0.82))
-                    .frame(height: 8)
+                    .frame(height: 10)
                     .overlay {
                         Capsule()
                             .strokeBorder(OnboardingStyle.primaryBlue.opacity(0.08), lineWidth: 1)
@@ -37,7 +39,7 @@ struct PersonalizationProgressHeader: View {
 
                 Capsule()
                     .fill(OnboardingStyle.buttonBlue)
-                    .frame(width: max(progressWidth, 16), height: 8)
+                    .frame(width: max(progressWidth, 16), height: 10)
 
                 ForEach(steps.indices, id: \.self) { index in
                     let isCompleted = fillsCurrentMilestone ? index <= activeIndex : index < activeIndex
@@ -61,9 +63,9 @@ struct PersonalizationProgressHeader: View {
             .frame(height: 26)
             .animation(.snappy(duration: 0.24), value: section)
         }
-        .frame(width: 260, height: 30)
+        .frame(width: 240, height: 30)
         .frame(maxWidth: .infinity)
-        .padding(.top, 42)
+        .padding(.top, 30)
         .accessibilityLabel("Langkah \(section.progressIndex + 1) dari \(PersonalizationSection.visibleProgressSections.count)")
     }
 }
@@ -75,24 +77,25 @@ struct PersonalizationSideNavigation: View {
     let onNext: () -> Void
 
     var body: some View {
-        GeometryReader { geometry in
-            PersonalizationSideNavigationButton(
-                systemName: "chevron.left",
-                isEnabled: canGoBack,
-                edge: .left,
-                action: onBack
-            )
-            .position(x: 14, y: geometry.size.height * 0.51)
+        VStack {
+            Spacer()
 
-            PersonalizationSideNavigationButton(
-                systemName: "chevron.right",
-                isEnabled: canAdvance,
-                edge: .right,
-                action: onNext
-            )
-            .position(x: geometry.size.width - 14, y: geometry.size.height * 0.51)
+            HStack(spacing: 36) {
+                PersonalizationSideNavigationButton(
+                    systemName: "chevron.left",
+                    isEnabled: canGoBack,
+                    action: onBack
+                )
+
+                PersonalizationSideNavigationButton(
+                    systemName: "chevron.right",
+                    isEnabled: canAdvance,
+                    action: onNext
+                )
+            }
+            .padding(.bottom, 193)
         }
-        .ignoresSafeArea()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
     }
 }
@@ -100,78 +103,36 @@ struct PersonalizationSideNavigation: View {
 private struct PersonalizationSideNavigationButton: View {
     let systemName: String
     let isEnabled: Bool
-    let edge: SideNavigationEdge
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            ZStack(alignment: edge.alignment) {
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 76, height: 44)
-                    .background {
-                        Capsule()
-                            .fill(Color.white.opacity(0.34))
-                    }
-                    .overlay {
-                        Capsule()
-                            .stroke(Color.white.opacity(0.72), lineWidth: 1)
-                    }
-                    .overlay {
-                        Capsule()
-                            .stroke(OnboardingStyle.controlShadow.opacity(0.20), lineWidth: 1)
-                            .blur(radius: 2)
-                            .offset(x: 0, y: 1)
-                            .mask {
-                                Capsule()
-                                    .fill(Color.black)
-                            }
-                    }
-                    .shadow(color: OnboardingStyle.controlShadow.opacity(0.20), radius: 2, x: 0, y: 1)
-
-                Image(systemName: systemName)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .frame(width: 24, height: 24)
-                    .background(isEnabled ? OnboardingStyle.buttonBlue : Color.white.opacity(0.68))
-                    .clipShape(Circle())
-                    .overlay {
-                        Circle()
-                            .strokeBorder(Color.white.opacity(0.94), lineWidth: 3)
-                    }
-                    .shadow(color: OnboardingStyle.controlShadow.opacity(0.10), radius: 5, y: 2)
-                    .padding(edge.paddingEdge, 10)
-                    .foregroundStyle(isEnabled ? .white : OnboardingStyle.buttonBlue.opacity(0.50))
+            Image(systemName: systemName)
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.72))
+                .frame(width: 52, height: 52)
+                .background(
+                    isEnabled
+                        ? OnboardingStyle.buttonBlue
+                        : OnboardingStyle.buttonBlue.opacity(0.22)
+                )
+                .clipShape(Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.96), lineWidth: 4)
                 }
-            .frame(width: 76, height: 44)
-            .contentShape(Capsule())
+                .shadow(
+                    color: OnboardingStyle.controlShadow.opacity(isEnabled ? 0.22 : 0.12),
+                    radius: 7,
+                    x: 0,
+                    y: 3
+                )
+                .frame(width: 60, height: 60)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .accessibilityLabel(systemName == "chevron.left" ? "Kembali" : "Lanjut")
-    }
-}
-
-private enum SideNavigationEdge {
-    case left
-    case right
-
-    var alignment: Alignment {
-        switch self {
-        case .left:
-            .trailing
-        case .right:
-            .leading
-        }
-    }
-
-    var paddingEdge: Edge.Set {
-        switch self {
-        case .left:
-            .trailing
-        case .right:
-            .leading
-        }
     }
 }
 
@@ -257,7 +218,7 @@ struct PersonalizationMascotFooter: View {
 
             if showsNote {
                 MascotNoteBubble(text: noteText)
-                    .offset(y: -200)
+                    .offset(y: -190)
             }
         }
         .frame(maxWidth: .infinity)
@@ -341,7 +302,7 @@ struct PersonalizationSliderQuestion: View {
                 ZStack(alignment: .top) {
                     Capsule()
                         .fill(Color.white.opacity(0.72))
-                        .frame(width: 20, height: trackHeight)
+                        .frame(width: 16, height: trackHeight)
                         .overlay {
                             Capsule()
                                 .stroke(OnboardingStyle.controlShadow.opacity(0.12), lineWidth: 1)
@@ -349,7 +310,7 @@ struct PersonalizationSliderQuestion: View {
 
                     Capsule()
                         .fill(OnboardingStyle.buttonBlue)
-                        .frame(width: 20, height: max(0, trackHeight - knobY + knobSize / 2))
+                        .frame(width: 24, height: max(0, trackHeight - knobY + knobSize / 2))
                         .frame(height: trackHeight, alignment: .bottom)
 
                     Text("\(Int(value.rounded()))")
@@ -381,6 +342,7 @@ struct PersonalizationSliderQuestion: View {
                 .foregroundStyle(OnboardingStyle.buttonBlue)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 240)
+                .offset(y: -25)
         }
         .padding(.top, 8)
     }
