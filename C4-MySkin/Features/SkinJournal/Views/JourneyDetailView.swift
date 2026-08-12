@@ -246,13 +246,6 @@ struct JourneyDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "id_ID")
-        formatter.dateFormat = "dd MMMM yyyy"
-        return formatter.string(from: date)
-    }
 }
 
 // MARK: - Read-Only Yellow Ruled Paper Box Component
