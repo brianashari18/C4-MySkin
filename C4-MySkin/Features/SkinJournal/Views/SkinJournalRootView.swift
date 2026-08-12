@@ -41,7 +41,11 @@ struct SkinJournalRootView: View {
                         }
                     )
                 case .personalization:
-                    PersonalizationView { _ in
+                    let initial = OnboardingPersonalization(
+                        skinType: userProfile.skinTypeRaw.flatMap(SkinType.init(rawValue:)),
+                        skinSensitivity: userProfile.skinSensitivityRaw.flatMap(SkinSensitivity.init(rawValue:))
+                    )
+                    PersonalizationView(initialPersonalization: initial) { _ in
                         path.removeLast()
                     }
                 case .mainJourney:
