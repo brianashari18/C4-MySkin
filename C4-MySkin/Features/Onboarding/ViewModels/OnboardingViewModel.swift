@@ -48,6 +48,7 @@ final class OnboardingViewModel {
     }
 
     func finishOnboarding() {
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         currentStep = .mainPage
     }
 }

@@ -57,7 +57,7 @@ struct OnboardingView: View {
                         onStart: viewModel.finishOnboarding
                     )
                 case .mainPage:
-                    MainPlaceholderView(name: viewModel.trimmedName)
+                    SkinJournalRootView()
                 }
             }
         }

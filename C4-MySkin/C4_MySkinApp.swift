@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct C4_MySkinApp: App {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some Scene {
         WindowGroup {
-            OnboardingView()
+            if hasCompletedOnboarding {
+                SkinJournalRootView()
+            } else {
+                OnboardingView()
+            }
         }
     }
 }
