@@ -69,9 +69,27 @@ extension OnboardingStep {
         case .getNamePrompt:
             .pointing
         case .inputName:
-            .peekHead
+            .head
         case .skinSensitivity, .mainPage:
             nil
+        }
+    }
+
+    var advancesOnTap: Bool {
+        switch self {
+        case .welcome, .introduction, .skincareHelp, .getNamePrompt:
+            true
+        case .inputName, .personalizationIntro, .skinType, .skinSensitivity, .mainPage:
+            false
+        }
+    }
+
+    var usesConversationTransition: Bool {
+        switch self {
+        case .welcome, .introduction, .skincareHelp, .getNamePrompt, .personalizationIntro:
+            true
+        case .inputName, .skinType, .skinSensitivity, .mainPage:
+            false
         }
     }
 }
