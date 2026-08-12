@@ -5,15 +5,20 @@
 
 import SwiftUI
 import AVFoundation
+import SwiftData
 
 struct SkinJournalRootView: View {
     @State private var viewModel = SkinJournalRootViewModel(store: .shared)
     @State private var path = NavigationPath()
     @State private var selectedProduct: SkincareProduct?
     @Environment(AppDataService.self) private var dataService
+    @Query private var profiles: [UserProfile]
 
     private var userProfile: UserProfile {
-        dataService.fetchOrCreateProfile()
+        if let existing = profiles.first {
+            return existing
+        }
+        return dataService.fetchOrCreateProfile()
     }
 
     var body: some View {
