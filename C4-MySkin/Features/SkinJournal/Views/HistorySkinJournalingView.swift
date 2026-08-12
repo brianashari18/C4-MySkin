@@ -57,7 +57,6 @@ struct HistorySkinJournalingView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 50)
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 16) {

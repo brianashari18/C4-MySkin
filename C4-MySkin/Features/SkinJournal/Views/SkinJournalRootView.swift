@@ -22,11 +22,14 @@ struct SkinJournalRootView: View {
             .navigationDestination(for: SkinJournalRoute.self) { route in
                 switch route {
                 case .skinProfile:
+                    let latestImageName = viewModel.latestJourney?.progressPhotos.last?.imageName
+                        ?? viewModel.latestJourney?.journalEntries.compactMap(\.imageName).last
                     SkinProfileView(
                         userName: "POLO",
                         skinType: "Dry",
                         sensitivity: "Moderate",
                         skinConcern: "_",
+                        latestImageName: latestImageName,
                         onRetakeTest: {
                             // Retake skin test action
                         }
