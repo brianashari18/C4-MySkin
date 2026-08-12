@@ -75,7 +75,7 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .journeyDetail(let hideProgressBar, let initialIndex):
+                case .journeyDetail(_, _):
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
                     JourneyDetailView(product: journey.product, onStart: {})
 
@@ -185,6 +185,8 @@ struct SkinJournalRootView: View {
 
                 case .productValidation:
                     ProductValidationView()
+                        .navigationBarBackButtonHidden(true)
+                        .toolbar(.hidden, for: .navigationBar)
                 }
             }
             .task {

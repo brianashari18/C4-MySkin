@@ -12,6 +12,7 @@ import SwiftUI
 /// Popup menu: "Camera" → CameraScannerView | "Other…" → ProductSearchView
 struct ImagePickerView: View {
 
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ProductValidationViewModel
 
     // Controls the popup menu visibility
@@ -28,7 +29,7 @@ struct ImagePickerView: View {
                     // MARK: - Navigation Bar
                     HStack {
                         Button {
-                            // Back action handled by parent / root coordinator
+                            dismiss()
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
