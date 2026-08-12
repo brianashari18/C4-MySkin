@@ -19,11 +19,21 @@ struct ValidationResultView: View {
     @State private var isBenefitsExpanded: Bool = false
     @State private var isConcernsExpanded: Bool = false
 
+    let allowsComparison: Bool
     private let result: ValidationResult
 
-    init(viewModel: ProductValidationViewModel, result: ValidationResult) {
+    init(viewModel: ProductValidationViewModel, result: ValidationResult, allowsComparison: Bool = true) {
         self.viewModel = viewModel
         self.result = result
+        self.allowsComparison = allowsComparison
+    }
+
+    init(result: ValidationResult, allowsComparison: Bool = false) {
+        let vm = ProductValidationViewModel()
+        vm.validationResult = result
+        self.viewModel = vm
+        self.result = result
+        self.allowsComparison = allowsComparison
     }
 
     var body: some View {
@@ -33,7 +43,13 @@ struct ValidationResultView: View {
             VStack(spacing: 0) {
                 // MARK: - Navigation Bar
                 HStack {
-                    Button { viewModel.goBackFromResult() } label: {
+                    Button {
+                        if allowsComparison {
+                            viewModel.goBackFromResult()
+                        } else {
+                            dismiss()
+                        }
+                    } label: {
                         Image(systemName: "chevron.left")
                             .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
                             .foregroundStyle(Color.App.textDark)
@@ -43,8 +59,8 @@ struct ValidationResultView: View {
 
                     Spacer()
 
-                    // Show "+" only when not yet in comparison mode
-                    if !viewModel.isComparisonMode {
+                    // Show "+" only when not yet in comparison mode and comparison is allowed
+                    if !viewModel.isComparisonMode && allowsComparison {
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showAddMenu.toggle()

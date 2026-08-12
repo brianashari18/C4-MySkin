@@ -79,9 +79,9 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .journeyDetail(_, _):
+                case .journeyDetail(let hideProgressBar, let initialIndex):
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
-                    JourneyDetailView(product: journey.product, onStart: {})
+                    JourneyDetailView(journey: journey, initialIndex: initialIndex, hideProgressBar: hideProgressBar)
 
                 case .calendarJournaling:
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
@@ -114,6 +114,14 @@ struct SkinJournalRootView: View {
                         product: product,
                         onStartJourney: {
                             viewModel.addJourney(SkincareJourney(product: product))
+                            dataService.saveTrackedProduct(
+                                name: product.name,
+                                brand: product.brand,
+                                category: product.category,
+                                imageURL: product.imageURL,
+                                slug: product.slug,
+                                highlights: product.highlights
+                            )
                             CameraSessionManager.shared.prepare()
                             path.append(SkinJournalRoute.camera)
                         }
