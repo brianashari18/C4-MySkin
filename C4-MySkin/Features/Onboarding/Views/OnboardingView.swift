@@ -111,7 +111,7 @@ private struct OnboardingConversationScreen: View {
                 .frame(maxWidth: .infinity)
                 .offset(y: isMascotDroppingToQuiz ? 300 : mascotOffsetY)
                 .animation(.easeInOut(duration: 0.22), value: step.rawValue)
-                .animation(.easeInOut(duration: 0.42), value: isMascotDroppingToQuiz)
+                .animation(.easeOut(duration: 0.20), value: isMascotDroppingToQuiz)
 
             Spacer()
 
@@ -156,7 +156,7 @@ private struct OnboardingConversationScreen: View {
     private var bottomContent: some View {
         switch step {
         case .personalizationIntro:
-            OnboardingBottomCTA(title: "Mulai Kuis", action: action)
+            OnboardingBottomCTA(title: "Start Quiz", action: action)
         case .welcome, .introduction, .skincareHelp, .getNamePrompt:
             OnboardingBottomTapText()
         case .inputName, .skinType, .skinSensitivity, .mainPage:
@@ -180,7 +180,7 @@ private struct OnboardingConversationScreen: View {
 
 private struct OnboardingBottomTapText: View {
     var body: some View {
-        Text("Tekan di mana saja untuk lanjut")
+        Text("Tap anywhere to continue")
             .font(.system(size: 16, weight: .semibold, design: .rounded))
             .foregroundStyle(OnboardingStyle.strongShadow.opacity(0.35))
             .frame(maxWidth: .infinity)
@@ -229,10 +229,10 @@ private struct OnboardingBottomCTA: View {
 private struct WelcomeTextBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Halo!")
+            Text("Hi!")
                 .font(OnboardingStyle.roundedFont(size: 20))
 
-            Text("Selamat datang di")
+            Text("Welcome to")
                 .font(OnboardingStyle.roundedFont(size: 20))
 
             Text("Foamy")
@@ -247,9 +247,9 @@ private struct WelcomeTextBlock: View {
 private struct IntroTextBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Kenalin aku FUUMII!")
+            Text("Hi, I'm FUUMII!")
 
-            Text("Aku akan bantu memudahkan\nperjalanan skincare-mu.")
+            Text("I'll make your skincare\njourney easier.")
         }
         .font(OnboardingStyle.roundedFont(size: 20))
         .foregroundStyle(OnboardingStyle.primaryBlue)
@@ -260,9 +260,9 @@ private struct IntroTextBlock: View {
 private struct SkincareHelpTextBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Aku bisa membantu kamu...")
+            Text("Here's how I can help...")
 
-            Text("Menganalisis skincare terbaik\nberdasarkan kulitmu sampai\nmenemani perjalananmu\nmenggunakannya.")
+            Text("I'll find the best skincare for your skin \nand support you throughout your \njourney.")
         }
         .font(OnboardingStyle.roundedFont(size: 20))
         .foregroundStyle(OnboardingStyle.primaryBlue)
@@ -272,7 +272,7 @@ private struct SkincareHelpTextBlock: View {
 
 private struct NamePromptTextBlock: View {
     var body: some View {
-        Text("Cukup tentang aku.\n\nSekarang giliran aku\nmengenalmu.")
+        Text("Enough about me.\n\nNow it's my turn\nto get to know you.")
             .font(OnboardingStyle.roundedFont(size: 20))
             .foregroundStyle(OnboardingStyle.primaryBlue)
             .multilineTextAlignment(.leading)
@@ -286,10 +286,8 @@ private struct PersonalizationIntroTextBlock: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Oke \(name), sekarang")
-            Text("bantu aku mengisi kuis")
-            Text("tentang kulitmu untuk")
-            Text("menemukan skincare terbaik!")
+            Text("Okay \(name), ")
+            Text("now take a quick quiz about your skin \nso we can find your best skincare!")
         }
         .font(OnboardingStyle.roundedFont(size: 20))
         .foregroundStyle(OnboardingStyle.primaryBlue)
@@ -304,11 +302,11 @@ private struct NameInputScreen: View {
     let action: () -> Void
     @FocusState private var isNameFocused: Bool
     private let mascotCanvasSize: CGFloat = 300
-    private let mascotScale: CGFloat = 0.78
+    private let mascotScale: CGFloat = 0.55
 
     var body: some View {
         VStack(spacing: 42) {
-            OnboardingTitleText(text: "Siapa nama panggilan kamu?", size: 20, alignment: .center)
+            OnboardingTitleText(text: "What should I call you?", size: 20, alignment: .center)
 
             Spacer()
 
@@ -330,7 +328,7 @@ private struct NameInputScreen: View {
             }
             .offset(y: -24)
 
-            OnboardingPrimaryButton(title: "Selesai", isEnabled: canSubmit, cornerRadius: 27, action: action)
+            OnboardingPrimaryButton(title: "Done", isEnabled: canSubmit, cornerRadius: 27, action: action)
                 .frame(maxWidth: 200)
                 .padding(.top, -70)
                 .offset(y: -24)
@@ -390,13 +388,13 @@ private struct SkinTypeScreen: View {
 
     var body: some View {
         VStack(spacing: 32) {
-            OnboardingTitleText(text: "Apa tipe kulit wajah kamu?", size: 20, alignment: .center)
+            OnboardingTitleText(text: "What is your skin type?", size: 20, alignment: .center)
                 .frame(maxWidth: .infinity)
 
             VStack(spacing: 28) {
                 ForEach(SkinType.allCases) { skinType in
                     OnboardingOptionButton(
-                        title: skinType.rawValue,
+                        title: skinType.onboardingDisplayName,
                         isSelected: selectedSkinType == skinType,
                         fontSize: 18,
                         height: 44
@@ -432,13 +430,13 @@ private struct SkinSensitivityScreen: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 32) {
-                OnboardingTitleText(text: "Bagaimana sensitivitas\nkulit wajah kamu?", size: 20, alignment: .center)
+                OnboardingTitleText(text: "How sensitive is\nyour skin?", size: 20, alignment: .center)
                     .frame(maxWidth: .infinity)
 
                 VStack(spacing: 28) {
                     ForEach(SkinSensitivity.allCases) { sensitivity in
                         OnboardingOptionButton(
-                            title: sensitivity.rawValue,
+                            title: sensitivity.onboardingDisplayName,
                             isSelected: selectedSensitivity == sensitivity,
                             fontSize: 18,
                             height: 44
@@ -455,10 +453,34 @@ private struct SkinSensitivityScreen: View {
             .padding(.horizontal, OnboardingLayout.screenHorizontalPadding)
             .padding(.top, 100)
 
-            OnboardingBottomCTA(title: "Selesai", isEnabled: selectedSensitivity != nil, action: onStart)
+            OnboardingBottomCTA(title: "Done", isEnabled: selectedSensitivity != nil, action: onStart)
                 .offset(y: OnboardingLayout.bottomOffsetY)
         }
         .padding(.bottom, OnboardingLayout.bottomPadding)
+    }
+}
+
+private extension SkinType {
+    var onboardingDisplayName: String {
+        switch self {
+        case .dry: "Dry"
+        case .normal: "Normal"
+        case .oily: "Oily"
+        case .combination: "Combination"
+        case .notSureYet: "Not Sure Yet"
+        }
+    }
+}
+
+private extension SkinSensitivity {
+    var onboardingDisplayName: String {
+        switch self {
+        case .normalResistant: "Normal / Resistant"
+        case .slightlySensitive: "Slightly Sensitive"
+        case .sensitive: "Sensitive"
+        case .verySensitive: "Very Sensitive"
+        case .notSureYet: "Not Sure Yet"
+        }
     }
 }
 

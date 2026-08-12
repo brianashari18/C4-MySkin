@@ -67,34 +67,34 @@ final class PersonalizationViewModel {
 
     var mascotNoteText: String {
         guard phase == .skinTypeAssessment || phase == .skinTypeConfirmation || phase == .skinSensitivityAssessment || phase == .skinConcern else {
-            return "Gapapa kok kalau belum yakin"
+            return "It's okay if you're not sure yet!"
         }
 
         if phase == .skinConcern {
-            return "Kamu bisa pilih lebih dari satu loh!"
+            return "You can pick more than one!"
         }
 
         if phase == .skinTypeConfirmation {
-            return "Pertanyaan terakhir. Let's go!!"
+            return "Last question. You've got this!"
         }
 
         if phase == .skinSensitivityAssessment {
             let questionNumber = sensitivityQuestionIndex + 1
             switch questionNumber {
             case 1...4:
-                return "Pertanyaan \(questionNumber) dari 10. Let's go!!"
+                return "Question \(questionNumber) of 10. Let's go!"
             case 5:
-                return "Kamu udah setengah jalan. Let's go!!"
+                return "You're halfway there. Keep going!"
             case 6:
-                return "Sisa 5 pertanyaan lagi. Let's go!!"
+                return "Just 5 questions left. Keep going!"
             case 7:
-                return "Sisa 4 pertanyaan lagi. Let's go!!"
+                return "Just 4 questions left. Keep going!"
             case 8:
-                return "Sisa 3 pertanyaan lagi. Let's go!!"
+                return "Just 3 questions left. Keep going!"
             case 9:
-                return "Sisa 2 pertanyaan lagi. Let's go!!"
+                return "Just 2 questions left. Keep going!"
             default:
-                return "Pertanyaan terakhir. Let's go!!"
+                return "Last question. You've got this!"
             }
         }
 
@@ -103,15 +103,15 @@ final class PersonalizationViewModel {
 
         switch questionNumber {
         case 1, 2, 3:
-            return "Pertanyaan \(questionNumber) dari \(totalQuestions). Let's go!!"
+            return "Question \(questionNumber) of \(totalQuestions). Let's go!"
         case 4:
-            return "Kamu udah setengah jalan. Let's go!!"
+            return "You're halfway there. Keep going!"
         case 5:
-            return "Sisa 3 pertanyaan lagi. Let's go!!"
+            return "Just 3 questions left. Keep going!"
         case 6:
-            return "Sisa 2 pertanyaan lagi. Let's go!!"
+            return "Just 2 questions left. Keep going!"
         default:
-            return "Pertanyaan \(questionNumber) dari \(totalQuestions). Let's go!!"
+            return "Question \(questionNumber) of \(totalQuestions). Let's go!"
         }
     }
 
@@ -139,9 +139,9 @@ final class PersonalizationViewModel {
     var assessmentProgressText: String {
         switch phase {
         case .skinTypeAssessment:
-            return "Pertanyaan \(skinTypeQuestionIndex + 1) dari \(PersonalizationContent.skinTypeQuestions.count)"
+            return "Question \(skinTypeQuestionIndex + 1) of \(PersonalizationContent.skinTypeQuestions.count)"
         case .skinSensitivityAssessment:
-            return "Pertanyaan \(sensitivityQuestionIndex + 1) dari \(PersonalizationContent.sensitivityQuestions.count)"
+            return "Question \(sensitivityQuestionIndex + 1) of \(PersonalizationContent.sensitivityQuestions.count)"
         default:
             return ""
         }

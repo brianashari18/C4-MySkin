@@ -137,8 +137,8 @@ struct PersonalizationView: View {
             )
         case .skinTypeResult:
             ResultContent(
-                eyebrow: "Tipe kulitmu...",
-                title: viewModel.selectedSkinType?.rawValue ?? "Normal",
+                eyebrow: "Your skin type is...",
+                title: viewModel.selectedSkinType?.personalizationDisplayName ?? "Normal",
                 actionTitle: nil,
                 action: nil
             )
@@ -153,8 +153,8 @@ struct PersonalizationView: View {
             SkinSensitivityAssessmentContent(viewModel: viewModel)
         case .skinSensitivityResult:
             ResultContent(
-                eyebrow: "Sensitivitas kulitmu...",
-                title: viewModel.selectedSkinSensitivity?.rawValue.capitalized ?? "Normal",
+                eyebrow: "Your skin sensitivity is...",
+                title: viewModel.selectedSkinSensitivity?.personalizationDisplayName ?? "Normal",
                 actionTitle: nil,
                 action: nil
             )
@@ -179,10 +179,10 @@ private struct SkinTypeSelectionContent: View {
     let onSelect: (SkinType) -> Void
 
     var body: some View {
-        PersonalizationQuestionLayout(title: "Apa tipe kulit wajah kamu?") {
+        PersonalizationQuestionLayout(title: "What is your skin type?") {
             PersonalizationOptionList(options: SkinType.allCases) { skinType in
                 OnboardingOptionButton(
-                    title: skinType.rawValue,
+                    title: skinType.personalizationDisplayName,
                     isSelected: selectedSkinType == skinType,
                     fontSize: 16,
                     height: 44
@@ -222,10 +222,10 @@ private struct SkinTypeConfirmationContent: View {
     let onSelect: (SkinType) -> Void
 
     var body: some View {
-        PersonalizationQuestionLayout(title: "Menurutmu, kulitmu\ntermasuk tipe apa?") {
+        PersonalizationQuestionLayout(title: "What do you think\nyour skin type is?") {
             PersonalizationOptionList(options: SkinType.assessmentConfirmationCases) { skinType in
                 OnboardingOptionButton(
-                    title: skinType.rawValue,
+                    title: skinType.personalizationDisplayName,
                     isSelected: selectedSkinType == skinType,
                     fontSize: 16,
                     height: 44
@@ -245,10 +245,10 @@ private struct SkinSensitivitySelectionContent: View {
     var onComplete: (() -> Void)?
 
     var body: some View {
-        PersonalizationQuestionLayout(title: "Bagaimana sensitivitas\nkulit wajah kamu?") {
+        PersonalizationQuestionLayout(title: "How sensitive is\nyour skin?") {
             PersonalizationOptionList(options: SkinSensitivity.allCases) { sensitivity in
                 OnboardingOptionButton(
-                    title: sensitivity.rawValue,
+                    title: sensitivity.personalizationDisplayName,
                     isSelected: selectedSensitivity == sensitivity,
                     fontSize: 16,
                     height: 44
@@ -260,7 +260,7 @@ private struct SkinSensitivitySelectionContent: View {
 
             if showsCompletionButton, let onComplete {
                 PersonalizationActionBar(
-                    primaryTitle: "Selesai",
+                    primaryTitle: "Done",
                     primaryAction: onComplete
                 )
                 .padding(.top, 20)
@@ -292,15 +292,15 @@ private struct SkinConcernContent: View {
 
     var body: some View {
         PersonalizationQuestionLayout(
-            title: "Bagaimana kondisi kulit\nkamu saat ini?",
+            title: "What is your skin like\nright now?",
             subtitle: viewModel.concernPage.subtitle
         ) {
             VStack(spacing: 12) {
                 ForEach(viewModel.concernPage.concerns) { concern in
                     OnboardingOptionButton(
-                        title: concern.rawValue,
+                        title: concern.personalizationDisplayName,
                         isSelected: viewModel.selectedConcerns.contains(concern),
-                        fontSize: concern.rawValue.count > 24 ? 12 : 16,
+                        fontSize: concern.personalizationDisplayName.count > 24 ? 12 : 16,
                         height: 44
                     ) {
                         viewModel.toggleConcern(concern)
@@ -309,7 +309,7 @@ private struct SkinConcernContent: View {
                 }
 
                 OnboardingOptionButton(
-                    title: "Tidak ada",
+                    title: "None",
                     isSelected: viewModel.isNoConcernSelectedForCurrentPage,
                     fontSize: 16,
                     height: 44
@@ -372,8 +372,8 @@ private struct PersonalizationResultPreview: View {
                 )
 
                 ResultContent(
-                    eyebrow: "Tipe kulitmu...",
-                    title: "Kombinasi",
+                    eyebrow: "Your skin type is...",
+                    title: "Combination",
                     actionTitle: nil,
                     action: nil
                 )
@@ -400,8 +400,8 @@ private struct PersonalizationSensitivityResultPreview: View {
                 )
 
                 ResultContent(
-                    eyebrow: "Sensitivitas kulitmu...",
-                    title: "Sensitif",
+                    eyebrow: "Your skin sensitivity is...",
+                    title: "Sensitive",
                     actionTitle: nil,
                     action: nil
                 )
@@ -457,7 +457,7 @@ private struct SummaryContent: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Text("Selesai")
+            Text("All done!")
             Text("Thank you!")
         }
         .font(OnboardingStyle.roundedFont(size: 52))
@@ -467,6 +467,49 @@ private struct SummaryContent: View {
         .padding(.top, 130)
         .contentShape(Rectangle())
         .onTapGesture(perform: onComplete)
+    }
+}
+
+private extension SkinType {
+    var personalizationDisplayName: String {
+        switch self {
+        case .dry: "Dry"
+        case .normal: "Normal"
+        case .oily: "Oily"
+        case .combination: "Combination"
+        case .notSureYet: "Not Sure Yet"
+        }
+    }
+}
+
+private extension SkinSensitivity {
+    var personalizationDisplayName: String {
+        switch self {
+        case .normalResistant: "Normal / Resistant"
+        case .slightlySensitive: "Slightly Sensitive"
+        case .sensitive: "Sensitive"
+        case .verySensitive: "Very Sensitive"
+        case .notSureYet: "Not Sure Yet"
+        }
+    }
+}
+
+private extension SkinConcernTag {
+    var personalizationDisplayName: String {
+        switch self {
+        case .blackheads: "Blackheads"
+        case .whiteheads: "Whiteheads"
+        case .acne: "Red Pimples"
+        case .inflamedAcne: "Inflamed Pimples"
+        case .deepAcne: "Deep Pimples"
+        case .darkSpots: "Dark Acne Marks"
+        case .redness: "Redness"
+        case .flecks: "Dark Spots"
+        case .freckles: "Brown or Gray Spots"
+        case .sunSpots: "Sun Spots"
+        case .unevenTone: "Uneven Skin Tone"
+        case .dullSkin: "Dull Skin"
+        }
     }
 }
 

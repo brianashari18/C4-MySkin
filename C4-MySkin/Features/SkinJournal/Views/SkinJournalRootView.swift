@@ -79,9 +79,13 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .journeyDetail(_, _):
+                case .journeyDetail(let hideProgressBar, let initialIndex):
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
-                    JourneyDetailView(product: journey.product, onStart: {})
+                    JourneyDetailView(
+                        journey: journey,
+                        initialIndex: initialIndex,
+                        hideProgressBar: hideProgressBar
+                    )
 
                 case .calendarJournaling:
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
@@ -109,7 +113,7 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .selectedProduct(let product, let imageName):
+                case .selectedProduct(let product, _):
                     SelectedProductView(
                         product: product,
                         onStartJourney: {
