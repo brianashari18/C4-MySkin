@@ -1,5 +1,5 @@
 //
-//  CameraPreviewView.swift
+//  ProductCameraPreviewView.swift
 //  C4-MySkin
 //
 //  Created by Brian Anashari on 10/08/26.
@@ -10,25 +10,25 @@ import AVFoundation
 
 /// A UIViewRepresentable that renders the live camera preview
 /// from an existing AVCaptureSession into a SwiftUI view.
-struct ProductValidationCameraPreviewView: UIViewRepresentable {
+struct ProductCameraPreviewView: UIViewRepresentable {
 
     let session: AVCaptureSession
 
-    func makeUIView(context: Context) -> ProductValidationPreviewUIView {
-        let view = ProductValidationPreviewUIView()
+    func makeUIView(context: Context) -> PreviewUIView {
+        let view = PreviewUIView()
         view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
         return view
     }
 
-    func updateUIView(_ uiView: ProductValidationPreviewUIView, context: Context) {
-        // Layout happens in layoutSubviews inside ProductValidationPreviewUIView
+    func updateUIView(_ uiView: PreviewUIView, context: Context) {
+        // Layout happens in layoutSubviews inside PreviewUIView
     }
 }
 
-// MARK: - ProductValidationPreviewUIView
+// MARK: - PreviewUIView
 /// A UIView whose backing layer is AVCaptureVideoPreviewLayer.
-final class ProductValidationPreviewUIView: UIView {
+final class PreviewUIView: UIView {
 
     override class var layerClass: AnyClass {
         AVCaptureVideoPreviewLayer.self

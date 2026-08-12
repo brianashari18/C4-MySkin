@@ -43,7 +43,7 @@ struct ProductSearchItem: Decodable, Identifiable, Hashable {
         case highlights
     }
 
-    init(name: String, brand: String? = nil, url: String, imageURL: String?, highlights: [String] = []) {
+    nonisolated init(name: String, brand: String? = nil, url: String, imageURL: String?, highlights: [String] = []) {
         self.name = name
         self.brand = brand
         self.url = url
@@ -61,17 +61,92 @@ struct ProductSearchItem: Decodable, Identifiable, Hashable {
     }
 }
 
+// MARK: - Product Resolve Models (GET /api/products/resolve)
+struct ProductResolveResponse: Decodable {
+    let query: String
+    let strategy: String?
+    let product: ProductResolvedItem?
+    let reason: String?
+    let collectedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case query
+        case strategy
+        case product
+        case reason
+        case collectedAt = "collected_at"
+    }
+}
+
+struct ProductResolvedItem: Decodable, Identifiable, Hashable {
+    let name: String
+    let brand: String?
+    let url: String
+    let imageURL: String?
+
+    var id: String { url }
+
+    var slug: String? {
+        URL(string: url)?.pathComponents.last
+    }
+
+    var fullName: String {
+        guard let brand, !brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return name
+        }
+        if name.lowercased().hasPrefix(brand.lowercased()) {
+            return name
+        }
+        return "\(brand) \(name)"
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case brand
+        case url
+        case imageURL = "image_url"
+    }
+}
+
 struct ProductDossierResponse: Decodable {
     let product: ProductPayload
     let price: ProductPricePayload?
     let reviews: ProductReviewsPayload?
     let ingredientProfiles: [IngredientProfileSummary]
+    let brandReputation: BrandReputationPayload?
+    let concerns: [ProductConcernPayload]?
 
     enum CodingKeys: String, CodingKey {
         case product
         case price
         case reviews
         case ingredientProfiles = "ingredient_profiles"
+        case brandReputation = "brand_reputation"
+        case concerns
+    }
+}
+
+struct BrandReputationPayload: Decodable {
+    let brand: String?
+    let narrative: String?
+
+    enum CodingKeys: String, CodingKey {
+        case brand
+        case narrative
+    }
+}
+
+struct ProductConcernPayload: Decodable, Hashable {
+    let name: String
+    let severity: String?
+    let incidence: String?
+    let ingredients: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case severity
+        case incidence
+        case ingredients
     }
 }
 

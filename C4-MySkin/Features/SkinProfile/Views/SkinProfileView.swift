@@ -10,10 +10,12 @@ import SwiftUI
 /// detail tipe kulit, sensitivitas, skin concern, dan tombol "Retake the test".
 struct SkinProfileView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var profile: UserProfile = AppDataService.shared.fetchOrCreateProfile()
+
     let userName: String
-    let skinType: String
-    let sensitivity: String
-    let skinConcern: String
+    let initialSkinType: String
+    let initialSensitivity: String
+    let initialSkinConcern: String
     let latestImageName: String?
     let onRetakeTest: () -> Void
 
@@ -26,11 +28,25 @@ struct SkinProfileView: View {
         onRetakeTest: @escaping () -> Void = {}
     ) {
         self.userName = userName
-        self.skinType = skinType
-        self.sensitivity = sensitivity
-        self.skinConcern = skinConcern
+        self.initialSkinType = skinType
+        self.initialSensitivity = sensitivity
+        self.initialSkinConcern = skinConcern
         self.latestImageName = latestImageName
         self.onRetakeTest = onRetakeTest
+    }
+
+    private var skinType: String {
+        profile.skinTypeRaw ?? initialSkinType
+    }
+
+    private var sensitivity: String {
+        profile.skinSensitivityRaw ?? initialSensitivity
+    }
+
+    private var skinConcern: String {
+        profile.selectedConcernIDs.isEmpty
+            ? initialSkinConcern
+            : profile.selectedConcernIDs.joined(separator: ", ")
     }
 
     var body: some View {
@@ -168,6 +184,9 @@ struct SkinProfileView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            profile = AppDataService.shared.fetchOrCreateProfile()
+        }
     }
 }
 

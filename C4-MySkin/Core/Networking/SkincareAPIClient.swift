@@ -13,7 +13,7 @@ struct SkincareAPIClient {
     private let decoder: JSONDecoder
     private let apiKey: String
 
-    init(
+    nonisolated init(
         session: URLSession = .shared,
         decoder: JSONDecoder = JSONDecoder(),
         apiKey: String? = nil
@@ -26,6 +26,13 @@ struct SkincareAPIClient {
     func searchProducts(query: String) async throws -> ProductSearchResponse {
         try await request(
             path: "/api/products/search",
+            queryItems: [URLQueryItem(name: "query", value: query)]
+        )
+    }
+
+    func resolveProduct(query: String) async throws -> ProductResolveResponse {
+        try await request(
+            path: "/api/products/resolve",
             queryItems: [URLQueryItem(name: "query", value: query)]
         )
     }

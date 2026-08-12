@@ -10,7 +10,7 @@ import Observation
 final class SkinJournalRootViewModel {
     private let store: SkinJournalStore
 
-    init(store: SkinJournalStore = .shared) {
+    init(store: SkinJournalStore) {
         self.store = store
     }
 

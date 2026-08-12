@@ -43,6 +43,9 @@ struct ProductValidationView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.currentStep)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

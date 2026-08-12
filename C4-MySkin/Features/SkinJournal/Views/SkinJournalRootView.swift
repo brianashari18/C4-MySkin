@@ -7,14 +7,20 @@ import SwiftUI
 import AVFoundation
 
 struct SkinJournalRootView: View {
-    @State private var viewModel = SkinJournalRootViewModel()
+    @State private var viewModel = SkinJournalRootViewModel(store: .shared)
     @State private var path = NavigationPath()
     @State private var selectedProduct: SkincareProduct?
+    @Environment(AppDataService.self) private var dataService
+
+    private var userProfile: UserProfile {
+        dataService.fetchOrCreateProfile()
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
             SkinJournalMainView(
                 journey: viewModel.latestJourney,
+                userName: userProfile.name.isEmpty ? "POLO" : userProfile.name,
                 onSkinJournaling: { path.append(SkinJournalRoute.mainJourney) },
                 onProductValidation: { path.append(SkinJournalRoute.productValidation) },
                 onProfile: { path.append(SkinJournalRoute.skinProfile) }
@@ -22,18 +28,29 @@ struct SkinJournalRootView: View {
             .navigationDestination(for: SkinJournalRoute.self) { route in
                 switch route {
                 case .skinProfile:
+                    let concernLabel = userProfile.selectedConcernIDs.isEmpty
+                        ? "_"
+                        : userProfile.selectedConcernIDs.joined(separator: ", ")
                     let latestImageName = viewModel.latestJourney?.progressPhotos.last?.imageName
                         ?? viewModel.latestJourney?.journalEntries.compactMap(\.imageName).last
                     SkinProfileView(
-                        userName: "POLO",
-                        skinType: "Dry",
-                        sensitivity: "Moderate",
-                        skinConcern: "_",
+                        userName: userProfile.name.isEmpty ? "POLO" : userProfile.name,
+                        skinType: userProfile.skinTypeRaw ?? "Dry",
+                        sensitivity: userProfile.skinSensitivityRaw ?? "Moderate",
+                        skinConcern: concernLabel,
                         latestImageName: latestImageName,
                         onRetakeTest: {
-                            // Retake skin test action
+                            path.append(SkinJournalRoute.personalization)
                         }
                     )
+                case .personalization:
+                    let initial = OnboardingPersonalization(
+                        skinType: userProfile.skinTypeRaw.flatMap(SkinType.init(rawValue:)),
+                        skinSensitivity: userProfile.skinSensitivityRaw.flatMap(SkinSensitivity.init(rawValue:))
+                    )
+                    PersonalizationView(initialPersonalization: initial) { _ in
+                        path.removeLast()
+                    }
                 case .mainJourney:
                     // "Your skin from time to time" — empty/active state
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
@@ -62,9 +79,9 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .journeyDetail(let hideProgressBar, let initialIndex):
+                case .journeyDetail(_, _):
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
-                    JourneyDetailView(journey: journey, initialIndex: initialIndex, hideProgressBar: hideProgressBar)
+                    JourneyDetailView(product: journey.product, onStart: {})
 
                 case .calendarJournaling:
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
@@ -153,9 +170,9 @@ struct SkinJournalRootView: View {
                     }
 
                 case .productValidation:
-                    ProductValidationPlaceholderView {
-                        path.removeLast()
-                    }
+                    ProductValidationView()
+                        .navigationBarBackButtonHidden(true)
+                        .toolbar(.hidden, for: .navigationBar)
                 }
             }
             .task {
@@ -288,6 +305,7 @@ struct SkinJournalRootView: View {
 
 enum SkinJournalRoute: Hashable {
     case skinProfile
+    case personalization
     case chooseProduct(imageName: String?)
     case selectedProduct(product: SkincareProduct, imageName: String?)
     case mainJourney
