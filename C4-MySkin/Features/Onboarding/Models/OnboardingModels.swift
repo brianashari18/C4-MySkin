@@ -33,6 +33,8 @@ enum SkinType: String, CaseIterable, Identifiable {
     case notSureYet = "Belum Yakin"
 
     var id: String { rawValue }
+
+    static let assessmentConfirmationCases: [SkinType] = [.dry, .normal, .oily, .combination]
 }
 
 enum SkinSensitivity: String, CaseIterable, Identifiable {
@@ -50,6 +52,7 @@ enum MascotAnimation: String, CaseIterable {
     case wave = "MascotWave"
     case pointing = "MascotPointing"
     case peekHead = "MascotPeekHead"
+    case head = "MascotHead"
 }
 
 extension OnboardingStep {
