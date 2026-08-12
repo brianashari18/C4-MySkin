@@ -81,6 +81,7 @@ struct PersonalizationView: View {
             .opacity(viewModel.phase.showsSideNavigation && !finishesAfterSensitivity ? 1 : 0)
             .allowsHitTesting(viewModel.phase.showsSideNavigation && !finishesAfterSensitivity)
         }
+        .navigationBarBackButtonHidden(true)
         .contentShape(Rectangle())
         .onTapGesture {
             if viewModel.phase == .summary {
