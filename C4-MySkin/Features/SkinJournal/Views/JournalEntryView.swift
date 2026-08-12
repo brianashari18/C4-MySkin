@@ -165,7 +165,11 @@ struct JournalEntryView: View {
                                 date: Date(),
                                 note: note,
                                 mood: .comfortable,
-                                quickTags: []
+                                quickTags: [],
+                                skinCondition: skinCondition,
+                                howItFeels: howItFeels,
+                                whatYouNoticed: whatYouNoticed,
+                                imageName: imageName
                             )
                             onSave(entry)
                         }) {

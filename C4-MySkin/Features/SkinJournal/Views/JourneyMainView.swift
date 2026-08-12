@@ -13,17 +13,26 @@ struct JourneyMainView: View {
     let isJourneyActive: Bool
     let onAddImage: () -> Void
     let onChooseProduct: () -> Void
+    let onViewDetail: () -> Void
+    let onViewHistory: () -> Void
+    let onViewCalendar: () -> Void
 
     init(
         journey: SkincareJourney,
         isJourneyActive: Bool = false,
         onAddImage: @escaping () -> Void,
-        onChooseProduct: @escaping () -> Void = {}
+        onChooseProduct: @escaping () -> Void = {},
+        onViewDetail: @escaping () -> Void = {},
+        onViewHistory: @escaping () -> Void = {},
+        onViewCalendar: @escaping () -> Void = {}
     ) {
         self.journey = journey
         self.isJourneyActive = isJourneyActive
         self.onAddImage = onAddImage
         self.onChooseProduct = onChooseProduct
+        self.onViewDetail = onViewDetail
+        self.onViewHistory = onViewHistory
+        self.onViewCalendar = onViewCalendar
     }
 
     var body: some View {
@@ -40,21 +49,19 @@ struct JourneyMainView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Top Bar with Back Button & Title (matching Main Page header top padding)
+                // Top Bar with Back Button, Calendar Button, History Button & Title
                 VStack(spacing: 12) {
                     HStack {
                         BackButton {
                             dismiss()
                         }
                         Spacer()
-                        if isJourneyActive {
-                            Button(action: {}) {
-                                Image(systemName: "ellipsis")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                                    .frame(width: 40, height: 40)
-                                    .background(Circle().fill(Color.white.opacity(0.85)))
-                                    .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+                        HStack(spacing: 10) {
+                            CalendarButton {
+                                onViewCalendar()
+                            }
+                            HistoryButton {
+                                onViewHistory()
                             }
                         }
                     }
@@ -129,7 +136,11 @@ struct JourneyMainView: View {
                                 Button(action: {
                                     let generator = UIImpactFeedbackGenerator(style: .medium)
                                     generator.impactOccurred()
-                                    onAddImage()
+                                    if !journey.journalEntries.isEmpty {
+                                        onViewDetail()
+                                    } else {
+                                        onAddImage()
+                                    }
                                 }) {
                                     ActiveMilestoneCard(journey: journey)
                                 }
@@ -321,6 +332,61 @@ private struct DashedLineView: View {
                 style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 3])
             )
         }
+    }
+}
+
+// MARK: - Calendar Top Bar Icon Button Component
+private struct CalendarButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
+            Image(systemName: "calendar")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                .frame(width: 42, height: 42)
+                .background(
+                    Circle()
+                        .stroke(Color(red: 0.11, green: 0.27, blue: 0.42), lineWidth: 2)
+                        .background(Circle().fill(Color.white.opacity(0.9)))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Calendar")
+    }
+}
+
+// MARK: - History Top Bar Button Component
+private struct HistoryButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
+            HStack(spacing: 6) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 15, weight: .bold))
+                Text("History")
+                    .font(.system(size: 14, weight: .bold))
+            }
+            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+            .padding(.horizontal, 14)
+            .frame(height: 42)
+            .background(
+                Capsule()
+                    .stroke(Color(red: 0.11, green: 0.27, blue: 0.42), lineWidth: 2)
+                    .background(Capsule().fill(Color.white.opacity(0.9)))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("History")
     }
 }
 

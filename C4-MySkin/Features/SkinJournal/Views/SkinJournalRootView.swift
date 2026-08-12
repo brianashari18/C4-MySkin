@@ -16,10 +16,21 @@ struct SkinJournalRootView: View {
             SkinJournalMainView(
                 journey: viewModel.latestJourney,
                 onSkinJournaling: { path.append(SkinJournalRoute.mainJourney) },
-                onProductValidation: { path.append(SkinJournalRoute.productValidation) }
+                onProductValidation: { path.append(SkinJournalRoute.productValidation) },
+                onProfile: { path.append(SkinJournalRoute.skinProfile) }
             )
             .navigationDestination(for: SkinJournalRoute.self) { route in
                 switch route {
+                case .skinProfile:
+                    SkinProfileView(
+                        userName: "POLO",
+                        skinType: "Dry",
+                        sensitivity: "Moderate",
+                        skinConcern: "_",
+                        onRetakeTest: {
+                            // Retake skin test action
+                        }
+                    )
                 case .mainJourney:
                     // "Your skin from time to time" — empty/active state
                     let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
@@ -32,6 +43,36 @@ struct SkinJournalRootView: View {
                         },
                         onChooseProduct: {
                             path.append(SkinJournalRoute.chooseProduct(imageName: nil))
+                        },
+                        onViewDetail: {
+                            path.append(SkinJournalRoute.journeyDetail(hideProgressBar: false, initialIndex: nil))
+                        },
+                        onViewHistory: {
+                            path.append(SkinJournalRoute.historyJournaling)
+                        },
+                        onViewCalendar: {
+                            path.append(SkinJournalRoute.calendarJournaling)
+                        }
+                    )
+
+                case .journeyDetail(let hideProgressBar, let initialIndex):
+                    let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
+                    JourneyDetailView(journey: journey, initialIndex: initialIndex, hideProgressBar: hideProgressBar)
+
+                case .calendarJournaling:
+                    let journey = viewModel.latestJourney ?? SkincareJourney(product: SkincareProduct.samples[0])
+                    SkinJournalCalendarView(
+                        journey: journey,
+                        onSelectDateEntry: { entry, entryIndex in
+                            path.append(SkinJournalRoute.journeyDetail(hideProgressBar: true, initialIndex: entryIndex))
+                        }
+                    )
+
+                case .historyJournaling:
+                    HistorySkinJournalingView(
+                        journeys: viewModel.journeys,
+                        onSelectJourney: { selectedJourney in
+                            path.append(SkinJournalRoute.journeyDetail(hideProgressBar: false, initialIndex: nil))
                         }
                     )
 
@@ -229,9 +270,13 @@ struct SkinJournalRootView: View {
 }
 
 enum SkinJournalRoute: Hashable {
+    case skinProfile
     case chooseProduct(imageName: String?)
     case selectedProduct(product: SkincareProduct, imageName: String?)
     case mainJourney
+    case journeyDetail(hideProgressBar: Bool = false, initialIndex: Int? = nil)
+    case historyJournaling
+    case calendarJournaling
     case camera
     case selfAssessment(imageName: String?)
     case journalEntry(imageName: String?, skinCondition: String, howItFeels: String, whatYouNoticed: String)

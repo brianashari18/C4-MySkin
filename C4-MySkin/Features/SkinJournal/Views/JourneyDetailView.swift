@@ -5,12 +5,43 @@
 
 import SwiftUI
 
+/// Halaman Detail History Journal & Milestone yang telah dijurnalkan.
+/// Menampilkan foto progress dengan tombol navigasi panah kiri/kanan,
+/// ringkasan kuesioner 2 kolom, dan kartu catatan bergaris dengan mascot di kanan bawah.
 struct JourneyDetailView: View {
     @Environment(\.dismiss) private var dismiss
-    let product: SkincareProduct
-    let onStart: () -> Void
+    let journey: SkincareJourney
+    let hideProgressBar: Bool
+    @State private var selectedIndex: Int
 
-    @State private var viewModel: JourneyDetailViewModel?
+    init(journey: SkincareJourney, initialIndex: Int? = nil, hideProgressBar: Bool = false) {
+        self.journey = journey
+        self.hideProgressBar = hideProgressBar
+        let defaultIndex = max(0, journey.journalEntries.count - 1)
+        _selectedIndex = State(initialValue: initialIndex ?? defaultIndex)
+    }
+
+    private var entries: [JournalEntry] {
+        journey.journalEntries.isEmpty
+            ? [JournalEntry(date: Date(), note: "hari ini kulitku kayak gemoy gitu, suka!!\n\nmungkin karena aku rajin pake night cream.", skinCondition: "Slightly Better", howItFeels: "Feels comfortable", whatYouNoticed: "Dryness")]
+            : journey.journalEntries
+    }
+
+    private var currentEntry: JournalEntry {
+        let validIndex = max(0, min(entries.count - 1, selectedIndex))
+        return entries[validIndex]
+    }
+
+    private var currentPhotoName: String? {
+        if let imageName = currentEntry.imageName, !imageName.isEmpty {
+            return imageName
+        }
+        if !journey.progressPhotos.isEmpty {
+            let validIndex = max(0, min(journey.progressPhotos.count - 1, selectedIndex))
+            return journey.progressPhotos[validIndex].imageName
+        }
+        return nil
+    }
 
     var body: some View {
         ZStack {
@@ -26,145 +57,289 @@ struct JourneyDetailView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Top bar with Back button
-                HStack {
-                    BackButton {
-                        dismiss()
+                // Top Bar with Back Button & Milestone Title
+                VStack(spacing: 12) {
+                    HStack {
+                        BackButton {
+                            dismiss()
+                        }
+                        Spacer()
                     }
-                    Spacer()
+
+                    Text("Milestone #\(currentMilestoneOrder)")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 8)
 
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("Selected Product")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                            .padding(.top, 12)
-
-                        SelectedProductCard(product: product)
-
-                        Text("You'll go through 2 milestones")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                            .padding(.top, 8)
-
-                        VStack(alignment: .leading, spacing: 20) {
-                            ForEach(Milestone.defaultMilestones) { milestone in
-                                MilestoneDetailRow(milestone: milestone)
-                            }
+                    VStack(spacing: 20) {
+                        // Timeline Progress Indicator Bar (hidden when opened from calendar view)
+                        if !hideProgressBar {
+                            JournalTimelineHeader()
+                                .padding(.top, 12)
                         }
 
-                        Spacer(minLength: 24)
+                        // Photo Frame Row with Left & Right Paging Arrow Buttons
+                        HStack(spacing: 12) {
+                            // Left Arrow Button
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
+                                withAnimation {
+                                    selectedIndex = max(0, selectedIndex - 1)
+                                }
+                            }) {
+                                Image(systemName: "chevron.left.circle.fill")
+                                    .font(.system(size: 32, weight: .semibold))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                    .opacity(selectedIndex > 0 ? 1.0 : 0.35)
+                            }
+                            .disabled(selectedIndex <= 0)
 
-                        TipCard()
-                            .padding(.bottom, 16)
+                            // Center Captured Photo Frame with Date Pill Overlay
+                            ZStack(alignment: .bottomTrailing) {
+                                if let photoName = currentPhotoName,
+                                   let uiImage = CameraViewModel.loadImage(named: photoName) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 250, height: 250)
+                                        .clipShape(RoundedRectangle(cornerRadius: 24))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 24)
+                                        .fill(Color.white)
+                                        .overlay(
+                                            FaceOutline()
+                                                .padding(24)
+                                        )
+                                        .frame(width: 250, height: 250)
+                                }
+
+                                // Date Pill Overlay at Bottom Right
+                                Text(formattedDate(currentEntry.date))
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(Color.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.85))
+                                    .clipShape(Capsule())
+                                    .padding(14)
+                            }
+                            .frame(width: 250, height: 250)
+                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(Color(red: 0.22, green: 0.43, blue: 0.65), lineWidth: 3.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+
+                            // Right Arrow Button
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
+                                withAnimation {
+                                    selectedIndex = min(entries.count - 1, selectedIndex + 1)
+                                }
+                            }) {
+                                Image(systemName: "chevron.right.circle.fill")
+                                    .font(.system(size: 32, weight: .semibold))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                    .opacity(selectedIndex < entries.count - 1 ? 1.0 : 0.35)
+                            }
+                            .disabled(selectedIndex >= entries.count - 1)
+                        }
+                        .padding(.horizontal, 16)
+
+                        // Questionnaire Results Summary (2 Columns)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .top, spacing: 24) {
+                                Text("Skin Condition")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                    .frame(width: 140, alignment: .leading)
+
+                                Text(currentEntry.skinCondition ?? "Slightly Better")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            HStack(alignment: .top, spacing: 24) {
+                                Text("How It Feels")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                    .frame(width: 140, alignment: .leading)
+
+                                Text(currentEntry.howItFeels ?? "Feels comfortable")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            HStack(alignment: .top, spacing: 24) {
+                                Text("What You Noticed")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
+                                    .frame(width: 140, alignment: .leading)
+
+                                Text(currentEntry.whatYouNoticed ?? "Dryness")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .padding(.horizontal, 32)
+                        .padding(.top, 4)
+
+                        // Prompt Question Header
+                        Text("How's your skin condition?")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                            .padding(.top, 4)
+
+                        // Yellow Ruled Paper Note Box with Mascot Overlaid at Bottom Right
+                        ZStack(alignment: .bottomTrailing) {
+                            YellowRuledPaperReadOnlyBox(
+                                text: currentEntry.note.isEmpty
+                                    ? "hari ini kulitku kayak gemoy gitu, suka!!\n\nmungkin karena aku rajin pake night cream."
+                                    : currentEntry.note
+                            )
+
+                            // Mascot Character Graphic Overlaid at Bottom Right
+                            MascotLottieView(width: 150)
+                                .accessibilityHidden(true)
+                                .offset(x: 130, y: 50)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 36)
                     }
-                    .padding(.horizontal, 24)
                 }
-
-                Spacer()
-
-                PillButton(title: "Start Journey") {
-                    viewModel?.startJourney()
-                    onStart()
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
             }
         }
         .navigationBarBackButtonHidden(true)
-        .onAppear {
-            viewModel = JourneyDetailViewModel(product: product)
-        }
+    }
+
+    private var currentMilestoneOrder: Int {
+        journey.milestones.first { !$0.isCompleted }?.order ?? 1
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "id_ID")
+        formatter.dateFormat = "dd MMMM yyyy"
+        return formatter.string(from: date)
     }
 }
 
-private struct SelectedProductCard: View {
-    let product: SkincareProduct
+// MARK: - Read-Only Yellow Ruled Paper Box Component
+private struct YellowRuledPaperReadOnlyBox: View {
+    let text: String
 
     var body: some View {
-        HStack(spacing: 16) {
-            JarIconView()
+        ZStack(alignment: .topLeading) {
+            // Warm yellow pastel background
+            RoundedRectangle(cornerRadius: 22)
+                .fill(Color(red: 0.99, green: 0.90, blue: 0.66))
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(product.brand == "detail" || product.brand.lowercased().starts(with: "brand") ? "Oil Face Wash" : product.brand)
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-
-                Text("Niacinamide, AHA, Panthenol")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(red: 0.35, green: 0.58, blue: 0.85))
+            // Lined paper rules
+            VStack(spacing: 0) {
+                Spacer().frame(height: 38)
+                ForEach(0..<4, id: \.self) { _ in
+                    Divider()
+                        .background(Color(red: 0.82, green: 0.72, blue: 0.52).opacity(0.6))
+                    Spacer().frame(height: 35)
+                }
             }
+            .padding(.horizontal, 20)
 
-            Spacer()
+            // Text content
+            Text(text)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                .lineSpacing(14)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .padding(.trailing, 80) // Leave space so text doesn't hide behind mascot
         }
-        .padding(14)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .frame(minHeight: 150)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: 22)
+                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 2)
         )
-        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
     }
 }
 
-private struct MilestoneDetailRow: View {
-    let milestone: Milestone
-
+// MARK: - Journal Timeline Header Component
+private struct JournalTimelineHeader: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Milestone \(milestone.order)")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+        ZStack {
+            // Background Progress Bar Slider Track
+            GeometryReader { geometry in
+                let totalWidth = geometry.size.width
+                let fillWidth = totalWidth * 0.50
 
-            Text(milestone.title)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.20))
+                        .frame(height: 7)
 
-            Text("to see the\nblablabla\nblablabla")
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(Color(red: 0.45, green: 0.52, blue: 0.60))
-                .lineSpacing(2)
-                .padding(.top, 2)
+                    Capsule()
+                        .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
+                        .frame(width: fillWidth, height: 7)
+
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
+                            .frame(width: 14, height: 14)
+
+                        Circle()
+                            .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.5), lineWidth: 3)
+                            .frame(width: 20, height: 20)
+                    }
+                    .offset(x: max(0, fillWidth - 10))
+                }
+                .frame(width: totalWidth, height: 36, alignment: .center)
+            }
+            .padding(.horizontal, 16)
+
+            // Timeline Icon Nodes
+            HStack {
+                CircleIconNode(iconName: "jar.fill", isActive: false)
+                Spacer()
+                CircleIconNode(iconName: "flag.fill", isActive: false)
+                Spacer()
+                CircleIconNode(iconName: "face.smiling.fill", isActive: true)
+                Spacer()
+                CircleIconNode(iconName: "flag.fill", isActive: false)
+                Spacer()
+                CircleIconNode(iconName: "flag.fill", isActive: false)
+            }
+            .padding(.horizontal, 12)
         }
+        .frame(height: 36)
+        .padding(.horizontal, 28)
     }
 }
 
-private struct TipCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            (
-                Text("for the best results, take\na progress photo ")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                +
-                Text("every 2 weeks")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-            )
-            .lineSpacing(2)
+private struct CircleIconNode: View {
+    let iconName: String
+    var isActive: Bool = false
 
-            Text("We'll remind you when it's time for each check in")
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Color(red: 0.60, green: 0.65, blue: 0.72))
-                .padding(.top, 2)
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(isActive ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.82, green: 0.90, blue: 0.98))
+                .frame(width: 34, height: 34)
+
+            Image(systemName: iconName)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(isActive ? Color.white : Color(red: 0.38, green: 0.61, blue: 0.93))
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
-        )
-        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
     }
 }
 
 #Preview {
-    JourneyDetailView(product: SkincareProduct.samples[0], onStart: {})
+    JourneyDetailView(journey: SkincareJourney(product: SkincareProduct.samples[0]))
 }
-
