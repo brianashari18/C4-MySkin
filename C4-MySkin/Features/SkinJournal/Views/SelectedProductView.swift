@@ -80,8 +80,7 @@ struct SelectedProductView: View {
 
                         // 3. Progress Photo Reminder Card
                         VStack(alignment: .leading, spacing: 6) {
-                            (Text("for the best results, take\na progress photo ")
-                             + Text("every 2 weeks").bold())
+                            Text("for the best results, take\na progress photo \(Text("every 2 weeks").bold())")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 

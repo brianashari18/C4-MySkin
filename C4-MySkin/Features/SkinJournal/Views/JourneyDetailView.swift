@@ -136,15 +136,9 @@ private struct MilestoneDetailRow: View {
 private struct TipCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            (
-                Text("for the best results, take\na progress photo ")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                +
-                Text("every 2 weeks")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-            )
+            Text("for the best results, take\na progress photo \(Text("every 2 weeks").font(.system(size: 16, weight: .bold)).foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42)))")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
             .lineSpacing(2)
 
             Text("We'll remind you when it's time for each check in")

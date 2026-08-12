@@ -23,7 +23,7 @@ enum EnvironmentLoader {
         return nil
     }
 
-    private static var candidateURLs: [URL] {
+    nonisolated private static var candidateURLs: [URL] {
         var urls: [URL] = [
             URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
                 .appendingPathComponent(".env")
@@ -40,7 +40,7 @@ enum EnvironmentLoader {
         return urls
     }
 
-    private static func parse(contents: String, forKey key: String) -> String? {
+    nonisolated private static func parse(contents: String, forKey key: String) -> String? {
         contents
             .split(whereSeparator: \ .isNewline)
             .compactMap { rawLine -> (String, String)? in

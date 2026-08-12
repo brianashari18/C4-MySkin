@@ -123,9 +123,7 @@ struct SkinJournalRootView: View {
                     }
 
                 case .productValidation:
-                    ProductValidationPlaceholderView {
-                        path.removeLast()
-                    }
+                    ProductValidationView()
                 }
             }
             .task {

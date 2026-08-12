@@ -365,6 +365,8 @@ struct ValidationResultView: View {
     private func ingredientsComparisonCard(first: ValidationResult, second: ValidationResult) -> some View {
         let set1 = Set(first.ingredientChecks.filter(\.isPresent).map { $0.name.lowercased() })
         let set2 = Set(second.ingredientChecks.filter(\.isPresent).map { $0.name.lowercased() })
+        let displayLimit = 6
+        let totalMasterCount = countMasterNames(first: first, second: second)
         let visibleMasterNames = buildMasterNames(first: first, second: second)
 
         ValidationCardView(title: "Ingredients") {
@@ -429,14 +431,14 @@ struct ValidationResultView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                if masterNames.count > displayLimit {
+                if totalMasterCount > displayLimit {
                     Button {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                             isIngredientsExpanded.toggle()
                         }
                     } label: {
                         HStack {
-                            Text(isIngredientsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(masterNames.count - displayLimit)+)")
+                            Text(isIngredientsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(totalMasterCount - displayLimit)+)")
                                 .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                 .foregroundStyle(Color.App.mediumBlue)
                             Image(systemName: isIngredientsExpanded ? "chevron.up" : "chevron.down")
@@ -450,6 +452,17 @@ struct ValidationResultView: View {
                 }
             }
         }
+    }
+
+    private func countMasterNames(first: ValidationResult, second: ValidationResult) -> Int {
+        var seen = Set<String>()
+        for item in first.ingredientChecks where item.isPresent {
+            seen.insert(item.name.lowercased())
+        }
+        for item in second.ingredientChecks where item.isPresent {
+            seen.insert(item.name.lowercased())
+        }
+        return seen.count
     }
 
     private func buildMasterNames(first: ValidationResult, second: ValidationResult) -> [String] {

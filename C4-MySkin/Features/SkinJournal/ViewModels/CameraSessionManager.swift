@@ -3,7 +3,7 @@
 //  C4-MySkin
 //
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import Observation
 
 /// Proxy delegate video output (NON-isolated) — dipanggil dari video queue.
@@ -17,7 +17,7 @@ final class CameraOutputProxy: NSObject, AVCaptureVideoDataOutputSampleBufferDel
     private let handlerLock = NSLock()
     private var frameHandler: ((CVPixelBuffer) -> Void)?
 
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         frameLock.lock()
         latestBuffer = pixelBuffer

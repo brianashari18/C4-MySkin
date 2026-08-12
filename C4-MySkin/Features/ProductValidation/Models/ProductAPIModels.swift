@@ -43,7 +43,7 @@ struct ProductSearchItem: Decodable, Identifiable, Hashable {
         case highlights
     }
 
-    init(name: String, brand: String? = nil, url: String, imageURL: String?, highlights: [String] = []) {
+    nonisolated init(name: String, brand: String? = nil, url: String, imageURL: String?, highlights: [String] = []) {
         self.name = name
         self.brand = brand
         self.url = url
