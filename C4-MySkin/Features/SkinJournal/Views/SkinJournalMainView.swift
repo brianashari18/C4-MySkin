@@ -269,20 +269,23 @@ struct ActiveMilestoneCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // 1. "Active" Badge Pill
-            Text("Active")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(Color(red: 0.38, green: 0.61, blue: 0.93))
-                .clipShape(Capsule())
+        VStack(alignment: .leading, spacing: 16) {
+            // Header dibuat satu baris agar kartu aktif selapang empty state.
+            HStack(spacing: 10) {
+                Text("Active")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.white)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 4)
+                    .background(Color(red: 0.38, green: 0.61, blue: 0.93))
+                    .clipShape(Capsule())
 
-            // 2. Milestone Title
-            Text(progress.isComplete ? "Journey Complete" : "Milestone #\(activeMilestoneOrder)")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                Text(progress.isComplete ? "Journey Complete" : "Milestone #\(activeMilestoneOrder)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+
+                Spacer(minLength: 0)
+            }
 
             // 3. Timeline Layout: Milestone #1 (14 Dashes '-') vs Milestone #2 (4 Flags dengan konektor 3 dashes '- - -')
             if activeMilestoneOrder <= 1 {
@@ -293,11 +296,11 @@ struct ActiveMilestoneCard: View {
                         ZStack {
                             Circle()
                                 .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
-                                .frame(width: 44, height: 44)
+                                .frame(width: 40, height: 40)
                                 .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
 
                             Image(systemName: journey.product.iconName ?? "jar.fill")
-                                .font(.system(size: 22))
+                                .font(.system(size: 19))
                                 .foregroundStyle(Color.white)
                         }
 
@@ -328,14 +331,14 @@ struct ActiveMilestoneCard: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(height: 40)
 
                     // Right: Flag Icon + Results in 2 weeks
                     VStack(spacing: 4) {
                         Image(systemName: "flag.fill")
-                            .font(.system(size: 32))
+                            .font(.system(size: 28))
                             .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
-                            .frame(height: 44)
+                            .frame(height: 40)
 
                         VStack(spacing: 1) {
                             Text("Results")
@@ -414,14 +417,21 @@ struct ActiveMilestoneCard: View {
                 }
             }
         }
-        .padding(18)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
         .frame(height: 195) // SAKLAK: 195pt
         .background(
-            RoundedRectangle(cornerRadius: 24)
+            RoundedRectangle(cornerRadius: 22)
                 .fill(Color(red: 0.99, green: 0.90, blue: 0.66))
-                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                .shadow(
+                    color: Color(red: 0.16, green: 0.35, blue: 0.54).opacity(0.20),
+                    radius: 12,
+                    x: 0,
+                    y: 7
+                )
         )
+        .padding(.bottom, 16)
     }
 }
 

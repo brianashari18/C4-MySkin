@@ -142,15 +142,9 @@ struct SkinJournalRootView: View {
                 case .camera:
                     CameraFlowView { imageName in
                         if !imageName.isEmpty {
-                            viewModel.updateLatestJourney { j in
-                                j.progressPhotos.append(
-                                    ProgressPhoto(date: Date(), imageName: imageName, milestoneOrder: 1)
-                                )
-                            }
-                            // Balik langsung ke JourneyMainView (tanpa kuesioner dulu)
-                            while path.count > 1 {
-                                path.removeLast()
-                            }
+                            // Foto diteruskan ke assessment dan baru disimpan ke
+                            // journey bersama journal entry setelah user menekan Save.
+                            path.append(SkinJournalRoute.selfAssessment(imageName: imageName))
                         } else {
                             path.removeLast()
                         }
@@ -182,6 +176,17 @@ struct SkinJournalRootView: View {
                         var shouldShowMilestoneTwoCompletion = false
                         viewModel.updateLatestJourney { j in
                             j.journalEntries.append(entry)
+
+                            if let imageName = entry.imageName, !imageName.isEmpty {
+                                let milestoneOrder = j.milestones.first { !$0.isCompleted }?.order ?? 2
+                                j.progressPhotos.append(
+                                    ProgressPhoto(
+                                        date: entry.date,
+                                        imageName: imageName,
+                                        milestoneOrder: milestoneOrder
+                                    )
+                                )
+                            }
 
                             if let milestoneIndex = j.milestones.firstIndex(where: { $0.order == 1 }),
                                !j.milestones[milestoneIndex].isCompleted,

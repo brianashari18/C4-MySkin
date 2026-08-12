@@ -210,13 +210,13 @@ Catatan: `simctl terminate` itu SIGKILL → UserDefaults TIDAK ter-flush ke disk
 - 2026-08-13: Lebar teks tips mascot di Main Page ditetapkan 150pt. Layout `SpeechBubbleView` diperbaiki agar shape putih selalu mengikuti ukuran intrinsik teks terbungkus beserta padding, sehingga tidak melebar mengikuti ruang `HStack`.
 - 2026-08-13: Bubble tips di `SkinJournalMainView` dikeluarkan dari `VStack` konten utama menjadi overlay independen yang dikunci dari sisi bawah. Perubahan tinggi akibat panjang teks kini hanya membuat bubble putih tumbuh ke atas dan tidak lagi menggeser mascot, kartu, ataupun action buttons.
 - 2026-08-13: Shadow kartu empty state **No active product yet** di Main Page diperjelas menggunakan warna primary blue 20%, radius 12pt, dan offset vertikal 7pt agar kartu kuning terangkat dari background tanpa mengubah dimensinya.
-
-
-
-
-
-
-
+- 2026-08-13: Tata letak `ActiveMilestoneCard` diringkas agar tidak terasa penuh dibanding empty state: badge Active dan judul Milestone kini satu baris, ikon/timeline Milestone 1 sedikit diperkecil, spacing diperlonggar, serta corner dan shadow disamakan dengan kartu **No active product yet**. Tinggi kartu dan logic progress tidak berubah.
+- 2026-08-13: Active `JourneyMainView` kini menampilkan CTA **Update Skin Condition** di bawah foto yang membuka camera flow lama, disertai mascot kecil dan bubble pengingat harian. Saat Milestone 1 aktif, kartu **Milestone 2 / Upcoming** tetap terlihat sebagai locked card dan dapat diketuk untuk memunculkan toast gelap dari bawah bertuliskan “Milestone 2 is still locked / Keep going on the Milestone 1”; toast menghilang otomatis setelah 3 detik.
+- 2026-08-13: Alur CTA **Update Skin Condition** dilengkapi menjadi Camera → Photo Confirmation → Self Assessment → Journal Entry → Save → Journey Main. Route camera tidak lagi langsung menambahkan `ProgressPhoto`; foto dan journal entry disimpan bersama hanya saat Save, dengan `milestoneOrder` mengikuti milestone aktif agar pembatalan/back sebelum Save tidak menghasilkan progress photo yatim.
+- 2026-08-13: Margin horizontal isi `JourneyMainView` diseragamkan melalui `contentHorizontalPadding = 32`: photo card, CTA update/start, divider, informasi produk, milestone cards, empty journey card, dan locked toast kini sejajar serta lebih jauh dari batas layar. Mascot reminder juga diberi z-index di atas speech bubble sesuai layering desain.
+- 2026-08-13: `UpcomingMilestoneCard` dirombak menjadi responsif. Timeline Milestone 2 sekarang memakai `GeometryReader` yang membagi lebar kartu menjadi lima node sama besar, menggantikan rangkaian intrinsic-width connector/flag/Spacer yang sebelumnya dapat memperlebar parent `ScrollView`. Header dibuat satu baris, timeline locked tetap blur, dan seluruh isi dijamin mengikuti lebar kartu.
+- 2026-08-13: Interaksi locked Milestone 2 diperbarui: seluruh permukaan `UpcomingMilestoneCard` menjadi hit area melalui rounded `contentShape`, sehingga ketukan pada header, timeline blur, maupun ruang kosong memunculkan peringatan. Timer 3 detik dihapus; bottom warning tetap tampil selama halaman Journey Main masih terbuka.
+- 2026-08-13: Warning locked Milestone 2 kini ditutup ketika user mengetuk area mana pun di luar kartu. Frame `UpcomingMilestoneCard` dilacak dalam coordinate space Journey Main; tap di dalam kartu tetap mempertahankan warning, sedangkan tap di luar menjalankan animasi dismiss. Margin foto/tombol yang dikembalikan user ke 32pt dipertahankan.
 
 
 
