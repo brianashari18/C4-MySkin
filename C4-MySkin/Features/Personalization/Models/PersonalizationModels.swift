@@ -114,81 +114,81 @@ enum PersonalizationContent {
     static let skinTypeQuestions: [SkinTypeAssessmentQuestion] = [
         // Q1: Washing frequency
         SkinTypeAssessmentQuestion(
-            title: "Berapa kali dalam sehari kamu mencuci muka?",
+            title: "How many times a day do you wash your face?",
             group: .q1,
             options: [
-                PersonalizationOption(title: "Saya tidak mencuci muka setiap hari", score: 1),
-                PersonalizationOption(title: "1 kali sehari", score: 2),
-                PersonalizationOption(title: "2 kali sehari", score: 3),
-                PersonalizationOption(title: "3 kali sehari", score: 4),
-                PersonalizationOption(title: "4 kali atau lebih", score: 5)
+                PersonalizationOption(title: "I don't wash it every day", score: 1),
+                PersonalizationOption(title: "Once a day", score: 2),
+                PersonalizationOption(title: "Twice a day", score: 3),
+                PersonalizationOption(title: "Three times a day", score: 4),
+                PersonalizationOption(title: "Four times or more", score: 5)
             ]
         ),
         // Q2: Post-wash condition
         SkinTypeAssessmentQuestion(
-            title: "2-3 jam setelah mencuci wajah dan tidak mengoleskan pelembap, sunscreen, toner, bedak, atau produk lainnya... Bagaimana rasa/tampilan dahi dan pipimu di bawah cahaya terang?",
+            title: "Two to three hours after washing your face without applying any products, how do your forehead and cheeks look and feel in bright light?",
             group: .q2,
             options: [
-                PersonalizationOption(title: "Sangat kasar, mengelupas, atau pucat keabu-abuan", score: 1),
-                PersonalizationOption(title: "Kencang (tertarik)", score: 2),
-                PersonalizationOption(title: "Terhidrasi dengan baik tanpa pantulan cahaya", score: 3),
-                PersonalizationOption(title: "Mengkilap dengan pantulan cahaya terang", score: 4)
+                PersonalizationOption(title: "Very rough, flaky, or dull", score: 1),
+                PersonalizationOption(title: "Tight or stretched", score: 2),
+                PersonalizationOption(title: "Well hydrated with no shine", score: 3),
+                PersonalizationOption(title: "Shiny in the light", score: 4)
             ]
         ),
         // Q3.1: Cheek oiliness
         SkinTypeAssessmentQuestion(
-            title: "Seberapa sering pipi kamu terasa/tampak berminyak?",
+            title: "How often do your cheeks look or feel oily?",
             group: .q3_1,
             options: [
-                PersonalizationOption(title: "Tidak pernah", score: 1),
-                PersonalizationOption(title: "Kadang-kadang", score: 2),
-                PersonalizationOption(title: "Sering", score: 3),
-                PersonalizationOption(title: "Selalu", score: 4)
+                PersonalizationOption(title: "Never", score: 1),
+                PersonalizationOption(title: "Sometimes", score: 2),
+                PersonalizationOption(title: "Often", score: 3),
+                PersonalizationOption(title: "Always", score: 4)
             ]
         ),
         // Q3.2: T-zone oiliness
         SkinTypeAssessmentQuestion(
-            title: "Seberapa sering T-zone (dahi & hidung) kamu terasa/tampak berminyak?",
+            title: "How often does your T-zone (forehead and nose) look or feel oily?",
             group: .q3_2,
             options: [
-                PersonalizationOption(title: "Tidak pernah", score: 1),
-                PersonalizationOption(title: "Kadang-kadang", score: 2),
-                PersonalizationOption(title: "Sering", score: 3),
-                PersonalizationOption(title: "Selalu", score: 4)
+                PersonalizationOption(title: "Never", score: 1),
+                PersonalizationOption(title: "Sometimes", score: 2),
+                PersonalizationOption(title: "Often", score: 3),
+                PersonalizationOption(title: "Always", score: 4)
             ]
         ),
         // Q3.2.1: T-zone oiliness speed
         SkinTypeAssessmentQuestion(
-            title: "Seberapa cepat T-zone (dahi & hidung) jadi berminyak setelah mencuci muka?",
+            title: "How quickly does your T-zone get oily after washing your face?",
             group: .q3_2_1,
             options: [
-                PersonalizationOption(title: "Tidak pernah berminyak", score: 1),
-                PersonalizationOption(title: "5 jam atau lebih setelah cuci muka", score: 2),
-                PersonalizationOption(title: "2 - 4 jam setelah cuci muka", score: 3),
-                PersonalizationOption(title: "1 jam setelah cuci muka", score: 4),
-                PersonalizationOption(title: "Sepanjang hari", score: 5)
+                PersonalizationOption(title: "It never gets oily", score: 1),
+                PersonalizationOption(title: "After 5 hours or more", score: 2),
+                PersonalizationOption(title: "After 2–4 hours", score: 3),
+                PersonalizationOption(title: "Within 1 hour", score: 4),
+                PersonalizationOption(title: "All day", score: 5)
             ]
         ),
         // Q4: Clogged pores
         SkinTypeAssessmentQuestion(
-            title: "Kamu memiliki pori-pori yang tersumbat (komedo hitam atau komedo putih)?",
+            title: "How often do you get clogged pores, blackheads, or whiteheads?",
             group: .q4,
             options: [
-                PersonalizationOption(title: "Tidak pernah", score: 1),
-                PersonalizationOption(title: "Kadang-kadang", score: 2),
-                PersonalizationOption(title: "Sering", score: 3),
-                PersonalizationOption(title: "Selalu", score: 4)
+                PersonalizationOption(title: "Never", score: 1),
+                PersonalizationOption(title: "Sometimes", score: 2),
+                PersonalizationOption(title: "Often", score: 3),
+                PersonalizationOption(title: "Always", score: 4)
             ]
         ),
         // Q5: Self-assessment
         SkinTypeAssessmentQuestion(
-            title: "Menurutmu, kulitmu termasuk tipe apa?",
+            title: "What do you think your skin type is?",
             group: .q5,
             options: [
-                PersonalizationOption(title: "Kering", score: 1),
+                PersonalizationOption(title: "Dry", score: 1),
                 PersonalizationOption(title: "Normal", score: 2),
-                PersonalizationOption(title: "Kombinasi", score: 3),
-                PersonalizationOption(title: "Berminyak", score: 4)
+                PersonalizationOption(title: "Combination", score: 3),
+                PersonalizationOption(title: "Oily", score: 4)
             ]
         )
     ]
@@ -197,54 +197,54 @@ enum PersonalizationContent {
 
     static let sensitivityQuestions: [SkinSensitivityAssessmentQuestion] = [
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah iritasi yang kamu rasakan pada kulit wajah secara umum?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How much irritation do you usually feel on your face?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa sering/parah rasa geli, merinding, atau seperti ada yang merayap di wajah?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How strong is the tingling or crawling feeling on your face?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah rasa panas menyengat seperti terbakar di kulit wajah?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How strong is the stinging or burning feeling on your face?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah sensasi hangat/panas pada kulit wajah kamu?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How warm or hot does your face feel?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah rasa kaku atau kulit wajah terasa \"ketarik\" (misalnya setelah cuci muka)?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How tight does your skin feel, especially after washing your face?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah rasa gatal pada kulit wajah kamu?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How itchy does your face feel?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah rasa sakit atau perih fisik pada kulit wajah?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How much pain or soreness do you feel on your face?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa parah rasa tidak nyaman secara keseluruhan pada kulit wajah kamu?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How uncomfortable does your face feel overall?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa sering/parah wajah terasa tiba-tiba memerah dan menyengat panas?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How strong is the sudden flushing or hot, stinging feeling on your face?",
+            lowLabel: "Not at all",
+            highLabel: "Very uncomfortable"
         ),
         SkinSensitivityAssessmentQuestion(
-            title: "Seberapa jelas/parah bercak kemerahan yang terlihat pada kulit wajah kamu?",
-            lowLabel: "Tidak dirasakan sama sekali",
-            highLabel: "Sangat mengganggu"
+            title: "How noticeable are the red patches on your face?",
+            lowLabel: "Not noticeable",
+            highLabel: "Very noticeable"
         )
     ]
 
@@ -252,15 +252,15 @@ enum PersonalizationContent {
 
     static let concernPages: [SkinConcernTagPage] = [
         SkinConcernTagPage(
-            subtitle: "Jerawat dan Penyumbatan Pori",
+            subtitle: "Breakouts and Clogged Pores",
             concerns: [.blackheads, .whiteheads, .acne, .inflamedAcne, .deepAcne]
         ),
         SkinConcernTagPage(
-            subtitle: "Warna Kulit Tidak Merata",
+            subtitle: "Dark Spots and Redness",
             concerns: [.darkSpots, .redness, .flecks, .freckles]
         ),
         SkinConcernTagPage(
-            subtitle: "Akibat Paparan Sinar Matahari",
+            subtitle: "Sun Damage and Dullness",
             concerns: [.sunSpots, .unevenTone, .dullSkin]
         )
     ]

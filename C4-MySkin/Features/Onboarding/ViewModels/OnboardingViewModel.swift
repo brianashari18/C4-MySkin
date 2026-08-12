@@ -76,12 +76,12 @@ final class OnboardingViewModel {
         }
 
         if isEnteringQuiz {
-            withAnimation(.easeInOut(duration: 0.42)) {
+            withAnimation(.easeOut(duration: 0.20)) {
                 isMascotDroppingToQuiz = true
             }
         }
 
-        let delay = isEnteringQuiz ? 0.42 : 0.18
+        let delay = isEnteringQuiz ? 0.20 : 0.18
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             OnboardingMascotLottieCache.prepare(nextStep.mascotAnimation)

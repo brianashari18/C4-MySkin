@@ -109,7 +109,7 @@ struct SkinJournalRootView: View {
                         }
                     )
 
-                case .selectedProduct(let product, let imageName):
+                case .selectedProduct(let product, _):
                     SelectedProductView(
                         product: product,
                         onStartJourney: {
