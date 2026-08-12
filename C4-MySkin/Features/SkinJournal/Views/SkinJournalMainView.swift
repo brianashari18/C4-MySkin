@@ -9,6 +9,19 @@ struct SkinJournalMainView: View {
     let journey: SkincareJourney?
     let onSkinJournaling: () -> Void
     let onProductValidation: () -> Void
+    let onProfile: () -> Void
+
+    init(
+        journey: SkincareJourney?,
+        onSkinJournaling: @escaping () -> Void,
+        onProductValidation: @escaping () -> Void,
+        onProfile: @escaping () -> Void = {}
+    ) {
+        self.journey = journey
+        self.onSkinJournaling = onSkinJournaling
+        self.onProductValidation = onProductValidation
+        self.onProfile = onProfile
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -111,6 +124,7 @@ struct SkinJournalMainView: View {
 
                 Button(action: {
                     triggerHaptic()
+                    onProfile()
                 }) {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 30, weight: .medium))

@@ -84,6 +84,10 @@ struct JournalEntry: Identifiable, Codable {
     var mood: SkinMood?
     var symptoms: [Symptom]
     var quickTags: [QuickTag]
+    var skinCondition: String?
+    var howItFeels: String?
+    var whatYouNoticed: String?
+    var imageName: String?
 
     init(
         id: UUID = UUID(),
@@ -91,7 +95,11 @@ struct JournalEntry: Identifiable, Codable {
         note: String,
         mood: SkinMood? = nil,
         symptoms: [Symptom] = [],
-        quickTags: [QuickTag] = []
+        quickTags: [QuickTag] = [],
+        skinCondition: String? = nil,
+        howItFeels: String? = nil,
+        whatYouNoticed: String? = nil,
+        imageName: String? = nil
     ) {
         self.id = id
         self.date = date
@@ -99,6 +107,10 @@ struct JournalEntry: Identifiable, Codable {
         self.mood = mood
         self.symptoms = symptoms
         self.quickTags = quickTags
+        self.skinCondition = skinCondition
+        self.howItFeels = howItFeels
+        self.whatYouNoticed = whatYouNoticed
+        self.imageName = imageName
     }
 }
 
