@@ -20,10 +20,14 @@ struct ProgressPhotoCard: View {
                     .aspectRatio(1, contentMode: .fit)
 
                 if let imageName = imageName, !imageName.isEmpty, let uiImage = CameraViewModel.loadImage(named: imageName) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(RoundedRectangle(cornerRadius: 26))
+                    GeometryReader { geo in
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 26))
                 } else {
                     VStack(spacing: 4) {
                         Text("Timelapse of your")

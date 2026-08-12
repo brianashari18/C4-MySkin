@@ -143,11 +143,6 @@ struct SkinJournalRootView: View {
                     ) { entry in
                         viewModel.updateLatestJourney { j in
                             j.journalEntries.append(entry)
-                            let milestoneIndex = j.milestones.firstIndex(where: { !$0.isCompleted })
-                            if let milestoneIndex {
-                                j.milestones[milestoneIndex].isCompleted = true
-                                j.milestones[milestoneIndex].completedDate = Date()
-                            }
                         }
                         // Balik ke "Your skin from time to time" (mainJourney)
                         while path.count > 1 {
@@ -203,6 +198,34 @@ struct SkinJournalRootView: View {
                     if viewModel.latestJourney == nil {
                         Self.makeSampleJourney(addTo: viewModel)
                     }
+                }
+                // Hook reproduksi JourneyMainView preview states:
+                // `--journey-m1` = "Active State (Milestone 1)", `--journey-m2` = "Milestone 2 State"
+                if args.contains("--journey-m1") || args.contains("--journey-m2") {
+                    let isM2 = args.contains("--journey-m2")
+                    var journey = SkincareJourney(product: SkincareProduct.samples[0])
+                    if isM2, let mIndex = journey.milestones.firstIndex(where: { !$0.isCompleted }) {
+                        journey.milestones[mIndex].isCompleted = true
+                    }
+                    if isM2 {
+                        journey.journalEntries = [
+                            JournalEntry(date: Date(), note: "Progress hari ini bagus banget! Kulit terasa lembab."),
+                            JournalEntry(date: Date().addingTimeInterval(86400 * 3), note: "Sore ini habis panas-panasan tapi tidak iritasi.")
+                        ]
+                        journey.progressPhotos = [
+                            ProgressPhoto(date: Date(), imageName: "sample_1", milestoneOrder: 1),
+                            ProgressPhoto(date: Date().addingTimeInterval(86400 * 3), imageName: "sample_2", milestoneOrder: 2)
+                        ]
+                    } else {
+                        journey.journalEntries = [
+                            JournalEntry(date: Date(), note: "Awal pemakaian produk baru.")
+                        ]
+                        journey.progressPhotos = [
+                            ProgressPhoto(date: Date(), imageName: "sample_1", milestoneOrder: 1)
+                        ]
+                    }
+                    viewModel.addJourney(journey)
+                    path.append(SkinJournalRoute.mainJourney)
                 }
                 #endif
             }

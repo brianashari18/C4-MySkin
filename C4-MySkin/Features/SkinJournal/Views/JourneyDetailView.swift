@@ -76,8 +76,12 @@ struct JourneyDetailView: View {
                     VStack(spacing: 20) {
                         // Timeline Progress Indicator Bar (hidden when opened from calendar view)
                         if !hideProgressBar {
-                            JournalTimelineHeader()
-                                .padding(.top, 12)
+                            JournalTimelineHeader(
+                                milestoneNumber: currentMilestoneOrder,
+                                totalEntries: entries.count,
+                                selectedIndex: $selectedIndex
+                            )
+                            .padding(.top, 12)
                         }
 
                         // Photo Frame Row with Left & Right Paging Arrow Buttons
@@ -271,72 +275,121 @@ private struct YellowRuledPaperReadOnlyBox: View {
     }
 }
 
-// MARK: - Journal Timeline Header Component
+// MARK: - Journal Timeline Header Component (Interaktif per Flag)
 private struct JournalTimelineHeader: View {
+    let milestoneNumber: Int
+    let totalEntries: Int
+    @Binding var selectedIndex: Int
+
+    private var nodeCount: Int {
+        milestoneNumber == 2 ? 5 : max(2, min(5, totalEntries))
+    }
+
+    private var progressRatio: Double {
+        guard nodeCount > 1 else { return 0 }
+        let current = min(selectedIndex, nodeCount - 1)
+        return Double(current) / Double(nodeCount - 1)
+    }
+
     var body: some View {
-        ZStack {
-            // Background Progress Bar Slider Track
-            GeometryReader { geometry in
-                let totalWidth = geometry.size.width
-                let fillWidth = totalWidth * 0.50
+        VStack(spacing: 4) {
+            ZStack {
+                // Background Progress Bar Slider Track
+                GeometryReader { geometry in
+                    let totalWidth = geometry.size.width
+                    let fillWidth = totalWidth * progressRatio
 
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.20))
-                        .frame(height: 7)
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.20))
+                            .frame(height: 6)
 
-                    Capsule()
-                        .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
-                        .frame(width: fillWidth, height: 7)
-
-                    ZStack {
-                        Circle()
+                        Capsule()
                             .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
-                            .frame(width: 14, height: 14)
+                            .frame(width: max(0, fillWidth), height: 6)
 
-                        Circle()
-                            .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.5), lineWidth: 3)
-                            .frame(width: 20, height: 20)
+                        ZStack {
+                            Circle()
+                                .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
+                                .frame(width: 14, height: 14)
+
+                            Circle()
+                                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.6), lineWidth: 3)
+                                .frame(width: 20, height: 20)
+                        }
+                        .offset(x: max(0, min(totalWidth - 10, fillWidth - 10)))
                     }
-                    .offset(x: max(0, fillWidth - 10))
+                    .frame(width: totalWidth, height: 40, alignment: .center)
                 }
-                .frame(width: totalWidth, height: 36, alignment: .center)
-            }
-            .padding(.horizontal, 16)
+                .padding(.horizontal, 16)
 
-            // Timeline Icon Nodes
-            HStack {
-                CircleIconNode(iconName: "jar.fill", isActive: false)
-                Spacer()
-                CircleIconNode(iconName: "flag.fill", isActive: false)
-                Spacer()
-                CircleIconNode(iconName: "face.smiling.fill", isActive: true)
-                Spacer()
-                CircleIconNode(iconName: "flag.fill", isActive: false)
-                Spacer()
-                CircleIconNode(iconName: "flag.fill", isActive: false)
+                // Timeline Icon Nodes (Clickable Flag Buttons)
+                HStack {
+                    ForEach(0..<nodeCount, id: \.self) { nodeIndex in
+                        let iconName = nodeIndex == 0 ? "jar.fill" : "flag.fill"
+                        let isSelected = nodeIndex == selectedIndex
+                        let isAvailable = nodeIndex < totalEntries
+
+                        Button(action: {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            let targetIndex = min(nodeIndex, max(0, totalEntries - 1))
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                selectedIndex = targetIndex
+                            }
+                        }) {
+                            CircleIconNode(
+                                iconName: iconName,
+                                isSelected: isSelected,
+                                isAvailable: isAvailable
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        if nodeIndex < nodeCount - 1 {
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
             }
-            .padding(.horizontal, 12)
+            .frame(height: 40)
         }
-        .frame(height: 36)
-        .padding(.horizontal, 28)
+        .padding(.horizontal, 24)
     }
 }
 
 private struct CircleIconNode: View {
     let iconName: String
-    var isActive: Bool = false
+    let isSelected: Bool
+    let isAvailable: Bool
 
     var body: some View {
         ZStack {
             Circle()
-                .fill(isActive ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.82, green: 0.90, blue: 0.98))
-                .frame(width: 34, height: 34)
+                .fill(
+                    isSelected
+                        ? Color(red: 0.16, green: 0.35, blue: 0.54)
+                        : (isAvailable ? Color(red: 0.74, green: 0.83, blue: 0.93) : Color(red: 0.88, green: 0.90, blue: 0.93))
+                )
+                .frame(width: isSelected ? 36 : 30, height: isSelected ? 36 : 30)
+
+            if isSelected {
+                Circle()
+                    .stroke(Color(red: 0.38, green: 0.61, blue: 0.93), lineWidth: 2.5)
+                    .frame(width: 42, height: 42)
+            }
 
             Image(systemName: iconName)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(isActive ? Color.white : Color(red: 0.38, green: 0.61, blue: 0.93))
+                .font(.system(size: isSelected ? 15 : 13, weight: .bold))
+                .foregroundStyle(
+                    isSelected
+                        ? Color.white
+                        : (isAvailable ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.60, green: 0.68, blue: 0.76))
+                )
         }
+        .frame(width: 42, height: 42)
+        .contentShape(Rectangle())
     }
 }
 

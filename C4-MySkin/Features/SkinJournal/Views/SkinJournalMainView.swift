@@ -211,11 +211,16 @@ private struct EmptyStateCard: View {
 }
 
 // MARK: - Active Milestone Card (Tracker Perjalanan)
+// MARK: - Active Milestone Card (Tracker Perjalanan Main Page)
 struct ActiveMilestoneCard: View {
     let journey: SkincareJourney
 
     private var progress: MilestoneProgress {
         MilestoneProgress(journey: journey)
+    }
+
+    private var activeMilestoneOrder: Int {
+        journey.milestones.first { !$0.isCompleted }?.order ?? (progress.currentFlag <= 1 ? 1 : 2)
     }
 
     var body: some View {
@@ -230,12 +235,12 @@ struct ActiveMilestoneCard: View {
                 .clipShape(Capsule())
 
             // 2. Milestone Title
-            Text(progress.isComplete ? "Journey Complete" : "Milestone #\(progress.currentFlag)")
+            Text(progress.isComplete ? "Journey Complete" : "Milestone #\(activeMilestoneOrder)")
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
 
             // 3. Timeline Layout: Milestone #1 (14 Dashes '-') vs Milestone #2 (4 Flags dengan konektor 3 dashes '- - -')
-            if progress.currentFlag <= 1 {
+            if activeMilestoneOrder <= 1 {
                 // Milestone #1: 14 Dashes '-' antara Jar Icon & Flag
                 HStack(alignment: .top, spacing: 10) {
                     // Left: Circle Jar Icon + Start Date
@@ -265,7 +270,7 @@ struct ActiveMilestoneCard: View {
                         let dashCount = 14
                         let filledCount = progress.isComplete
                             ? dashCount
-                            : max(1, min(dashCount, Int(round(progress.progress * Double(dashCount)))))
+                            : max(1, min(dashCount, max(journey.journalEntries.count, Int(round(progress.progress * Double(dashCount))))))
 
                         ForEach(0..<dashCount, id: \.self) { index in
                             RoundedRectangle(cornerRadius: 1.5)
@@ -297,50 +302,88 @@ struct ActiveMilestoneCard: View {
                     }
                 }
             } else {
-                // Milestone #2 (4 Flags dengan 3 Dashes '- - -' antar flag)
-                HStack(spacing: 6) {
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
-                            .frame(width: 32, height: 32)
+                // Milestone #2 (4 Flags: Start = +2 minggu dari Milestone 1, Finish = in 8 weeks)
+                HStack(alignment: .top, spacing: 4) {
+                    VStack(spacing: 4) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
+                                .frame(width: 44, height: 44)
+                                .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
 
-                        Image(systemName: journey.product.iconName ?? "jar.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color.white)
+                            Image(systemName: journey.product.iconName ?? "jar.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(Color.white)
+                        }
+
+                        VStack(spacing: 1) {
+                            Text("Start")
+                                .font(.system(size: 12, weight: .bold))
+                            Text(formattedDate(journey.startDate.addingTimeInterval(14 * 86400)))
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
                     }
+
+                    Spacer(minLength: 0)
+
+                    let activeFlagIndex = max(1, min(4, journey.journalEntries.count > 1 ? journey.journalEntries.count - 1 : 1))
 
                     ForEach(1...4, id: \.self) { flagIndex in
                         ThreeDashConnector(
-                            activeCount: progress.currentFlag > flagIndex ? 3 : (progress.currentFlag == flagIndex ? Int(round(progress.progress * 3.0)) : 0)
+                            activeCount: activeFlagIndex > flagIndex ? 3 : (activeFlagIndex == flagIndex ? Int(round(progress.progress * 3.0)) : 0)
                         )
+                        .frame(height: 44)
 
-                        Image(systemName: "flag.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(
-                                progress.currentFlag >= flagIndex
-                                    ? Color(red: 0.22, green: 0.43, blue: 0.65)
-                                    : Color(white: 0.65)
-                            )
+                        Spacer(minLength: 0)
+
+                        VStack(spacing: 4) {
+                            Image(systemName: "flag.fill")
+                                .font(.system(size: 26))
+                                .foregroundStyle(
+                                    activeFlagIndex >= flagIndex
+                                        ? Color(red: 0.22, green: 0.43, blue: 0.65)
+                                        : Color(white: 0.65)
+                                )
+                                .frame(height: 44)
+
+                            if flagIndex == 4 {
+                                VStack(spacing: 1) {
+                                    Text("Results")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
+                                    Text("in 8 weeks")
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
+                                }
+                                .foregroundStyle(Color(red: 0.22, green: 0.43, blue: 0.65))
+                            }
+                        }
+
+                        if flagIndex < 4 {
+                            Spacer(minLength: 0)
+                        }
                     }
                 }
-                .frame(height: 36)
             }
         }
         .padding(18)
         .frame(maxWidth: .infinity)
-        .frame(height: 195) // SAKLAK: sama dengan EmptyStateCard (195pt)
+        .frame(height: 195) // SAKLAK: 195pt
         .background(
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color(red: 0.99, green: 0.90, blue: 0.66))
                 .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         )
-        .padding(.init(top: 0, leading: 0, bottom: 16, trailing: 0))
     }
 }
 
-// MARK: - Upcoming / Locked Milestone Card (Milestone #2)
+// MARK: - Upcoming / Locked Milestone Card (Milestone #2 - 4 Flags)
 private struct UpcomingMilestoneCard: View {
     let milestoneNumber: Int
+    var startDate: Date = Date()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -350,59 +393,82 @@ private struct UpcomingMilestoneCard: View {
                 .foregroundStyle(Color.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
-                .background(Color(red: 0.45, green: 0.45, blue: 0.45))
+                .background(Color(red: 0.55, green: 0.62, blue: 0.70))
                 .clipShape(Capsule())
 
             // 2. Milestone Title (Muted Dark Gray)
             Text("Milestone #\(milestoneNumber)")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Color(red: 0.40, green: 0.40, blue: 0.40))
+                .foregroundStyle(Color(red: 0.35, green: 0.42, blue: 0.50))
 
-            // 3. Timeline Row: Jar Icon --- 3 Dashes --- Flag 1 --- 3 Dashes --- Flag 2 --- 3 Dashes --- Flag 3 --- 3 Dashes --- Flag 4
-            HStack(spacing: 6) {
+            // 3. Timeline Layout: 4 Flags (Start: +2 minggu dari M1 start, Finish: in 8 weeks)
+            HStack(alignment: .top, spacing: 4) {
                 // Jar icon node (gray)
-                ZStack {
-                    Circle()
-                        .fill(Color(white: 0.65))
-                        .frame(width: 32, height: 32)
+                VStack(spacing: 4) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(red: 0.65, green: 0.72, blue: 0.80))
+                            .frame(width: 44, height: 44)
 
-                    Image(systemName: "jar.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(Color.white)
+                        Image(systemName: "jar.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.white)
+                    }
+
+                    VStack(spacing: 1) {
+                        Text("Start")
+                            .font(.system(size: 12, weight: .bold))
+                        Text(formattedDate(startDate.addingTimeInterval(14 * 86400)))
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(Color(red: 0.55, green: 0.62, blue: 0.70))
                 }
 
-                ThreeDashConnector()
+                Spacer(minLength: 0)
 
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color(white: 0.65))
+                ForEach(1...4, id: \.self) { flagIndex in
+                    ThreeDashConnector(
+                        activeCount: 0,
+                        activeColor: Color(red: 0.16, green: 0.35, blue: 0.54),
+                        inactiveColor: Color(red: 0.78, green: 0.83, blue: 0.90)
+                    )
+                    .frame(height: 44)
 
-                ThreeDashConnector()
+                    Spacer(minLength: 0)
 
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color(white: 0.65))
+                    VStack(spacing: 4) {
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(Color(red: 0.65, green: 0.72, blue: 0.80))
+                            .frame(height: 44)
 
-                ThreeDashConnector()
+                        if flagIndex == 4 {
+                            VStack(spacing: 1) {
+                                Text("Results")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                Text("in 8 weeks")
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                            }
+                            .foregroundStyle(Color(red: 0.55, green: 0.62, blue: 0.70))
+                        }
+                    }
 
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color(white: 0.65))
-
-                ThreeDashConnector()
-
-                Image(systemName: "flag.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color(white: 0.65))
+                    if flagIndex < 4 {
+                        Spacer(minLength: 0)
+                    }
+                }
             }
-            .frame(height: 36)
         }
         .padding(18)
         .frame(maxWidth: .infinity)
-        .frame(height: 150)
+        .frame(height: 195) // SAKLAK: 195pt identik dengan Milestone 1
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(red: 0.72, green: 0.72, blue: 0.72))
+                .fill(Color(red: 0.88, green: 0.90, blue: 0.93))
                 .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
         )
     }
@@ -425,11 +491,11 @@ private struct ThreeDashConnector: View {
     }
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 2) {
             ForEach(0..<3, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 1.5)
                     .fill(index < activeCount ? activeColor : inactiveColor)
-                    .frame(width: 8, height: 4)
+                    .frame(width: 6, height: 4)
             }
         }
     }
