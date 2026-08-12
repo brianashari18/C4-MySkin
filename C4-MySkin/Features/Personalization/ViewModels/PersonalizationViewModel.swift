@@ -2,7 +2,8 @@
 //  PersonalizationViewModel.swift
 //  C4-MySkin
 //
-//  Created by Codex on 11/08/26.
+//  Rule-based skin type & sensitivity scoring.
+//  Reference: KERAMEAN - Research Mufid 2.0
 //
 
 import Foundation
@@ -13,7 +14,7 @@ final class PersonalizationViewModel {
     var phase: PersonalizationPhase = .skinTypeSelection
     var selectedSkinType: SkinType?
     var selectedSkinSensitivity: SkinSensitivity?
-    var selectedConcerns: Set<SkinConcern> = []
+    var selectedConcerns: Set<SkinConcernTag> = []
     var skinTypeQuestionIndex = 0
     var sensitivityQuestionIndex = 0
     var concernPageIndex = 0
@@ -23,7 +24,8 @@ final class PersonalizationViewModel {
     private let allowsSkinTypeAssessment: Bool
     private let allowsSensitivityAssessment: Bool
     private let stopsAtSensitivitySelection: Bool
-    private var skinTypeAnswers: [PersonalizationOption] = []
+    private var skinTypeScores: [SkinTypeQuestionGroup: Int] = [:]
+    private var skinTypeSelectedOptions: [Int: PersonalizationOption] = [:]
     private var sensitivityAnswers: [Double] = []
     private var noConcernPageIndexes: Set<Int> = []
 
@@ -39,7 +41,7 @@ final class PersonalizationViewModel {
         self.stopsAtSensitivitySelection = stopsAtSensitivitySelection
         selectedSkinType = initialPersonalization.skinType
         selectedSkinSensitivity = initialPersonalization.skinSensitivity
-        selectedConcerns = Set(initialPersonalization.skinConcerns)
+        selectedConcerns = []
     }
 
     var skinTypeQuestion: SkinTypeAssessmentQuestion {
@@ -50,7 +52,7 @@ final class PersonalizationViewModel {
         PersonalizationContent.sensitivityQuestions[sensitivityQuestionIndex]
     }
 
-    var concernPage: SkinConcernPage {
+    var concernPage: SkinConcernTagPage {
         PersonalizationContent.concernPages[concernPageIndex]
     }
 
@@ -63,47 +65,36 @@ final class PersonalizationViewModel {
             concernPage.concerns.contains { selectedConcerns.contains($0) }
     }
 
-    var assessmentProgressText: String {
-        switch phase {
-        case .skinTypeAssessment:
-            ""
-        case .skinSensitivityAssessment:
-            ""
-        default:
-            ""
-        }
-    }
-
     var mascotNoteText: String {
         guard phase == .skinTypeAssessment || phase == .skinTypeConfirmation || phase == .skinSensitivityAssessment || phase == .skinConcern else {
-            return "Gapapa kok kalau belum yakin"
+            return "It's okay if you're not sure yet!"
         }
 
         if phase == .skinConcern {
-            return "Kamu bisa pilih lebih dari satu loh!"
+            return "You can pick more than one!"
         }
 
         if phase == .skinTypeConfirmation {
-            return "Pertanyaan terakhir. Let’s go!!"
+            return "Last question. You've got this!"
         }
 
         if phase == .skinSensitivityAssessment {
             let questionNumber = sensitivityQuestionIndex + 1
             switch questionNumber {
             case 1...4:
-                return "Pertanyaan \(questionNumber) dari 10. Let’s go!!"
+                return "Question \(questionNumber) of 10. Let's go!"
             case 5:
-                return "Kamu udah setengah jalan. Let’s go!!"
+                return "You're halfway there. Keep going!"
             case 6:
-                return "Sisa 5 pertanyaan lagi. Let’s go!!"
+                return "Just 5 questions left. Keep going!"
             case 7:
-                return "Sisa 4 pertanyaan lagi. Let’s go!!"
+                return "Just 4 questions left. Keep going!"
             case 8:
-                return "Sisa 3 pertanyaan lagi. Let’s go!!"
+                return "Just 3 questions left. Keep going!"
             case 9:
-                return "Sisa 2 pertanyaan lagi. Let’s go!!"
+                return "Just 2 questions left. Keep going!"
             default:
-                return "Pertanyaan terakhir. Let’s go!!"
+                return "Last question. You've got this!"
             }
         }
 
@@ -112,15 +103,15 @@ final class PersonalizationViewModel {
 
         switch questionNumber {
         case 1, 2, 3:
-            return "Pertanyaan \(questionNumber) dari \(totalQuestions). Let’s go!!"
+            return "Question \(questionNumber) of \(totalQuestions). Let's go!"
         case 4:
-            return "Kamu udah setengah jalan. Let’s go!!"
+            return "You're halfway there. Keep going!"
         case 5:
-            return "Sisa 3 pertanyaan lagi. Let’s go!!"
+            return "Just 3 questions left. Keep going!"
         case 6:
-            return "Sisa 2 pertanyaan lagi. Let’s go!!"
+            return "Just 2 questions left. Keep going!"
         default:
-            return "Pertanyaan \(questionNumber) dari \(totalQuestions). Let’s go!!"
+            return "Question \(questionNumber) of \(totalQuestions). Let's go!"
         }
     }
 
@@ -145,13 +136,25 @@ final class PersonalizationViewModel {
         }
     }
 
+    var assessmentProgressText: String {
+        switch phase {
+        case .skinTypeAssessment:
+            return "Question \(skinTypeQuestionIndex + 1) of \(PersonalizationContent.skinTypeQuestions.count)"
+        case .skinSensitivityAssessment:
+            return "Question \(sensitivityQuestionIndex + 1) of \(PersonalizationContent.sensitivityQuestions.count)"
+        default:
+            return ""
+        }
+    }
+
     var result: OnboardingPersonalization {
         var personalization = OnboardingPersonalization()
         personalization.skinType = selectedSkinType
         personalization.skinSensitivity = selectedSkinSensitivity
-        personalization.skinConcerns = Array(selectedConcerns).sorted { $0.rawValue < $1.rawValue }
         return personalization
     }
+
+    // MARK: - Navigation
 
     func advanceFromCurrentPhase() {
         switch phase {
@@ -184,8 +187,8 @@ final class PersonalizationViewModel {
             startSkinTypeAssessment()
             return
         }
-
         selectedSkinType = skinType
+        saveToSwiftData()
         phase = .skinSensitivitySelection
     }
 
@@ -194,8 +197,8 @@ final class PersonalizationViewModel {
             startSkinSensitivityAssessment()
             return
         }
-
         selectedSkinSensitivity = skinSensitivity
+        saveToSwiftData()
         if stopsAtSensitivitySelection {
             phase = .skinSensitivitySelection
             return
@@ -206,30 +209,80 @@ final class PersonalizationViewModel {
 
     func selectSkinTypeOption(_ option: PersonalizationOption) {
         selectedSkinTypeOption = option
-        continueSkinTypeAssessment()
+
+        let group = PersonalizationContent.skinTypeQuestions[skinTypeQuestionIndex].group
+        skinTypeScores[group] = option.score
+        skinTypeSelectedOptions[skinTypeQuestionIndex] = option
+
+        // Auto-advance to next question or confirmation step
+        if skinTypeQuestionIndex < PersonalizationContent.skinTypeQuestions.count - 1 {
+            skinTypeQuestionIndex += 1
+            selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
+        } else {
+            // All 7 questions answered — calculate result
+            selectedSkinType = calculateSkinType()
+            saveToSwiftData()
+            phase = .skinTypeConfirmation
+        }
     }
 
     func selectConfirmedSkinType(_ skinType: SkinType) {
         selectedSkinType = skinType
+        saveToSwiftData()
         phase = .skinTypeResult
     }
 
+    // MARK: - Skin Type Assessment (Rule-Based)
+
     func continueSkinTypeAssessment() {
         guard let selectedSkinTypeOption else { return }
-        skinTypeAnswers.append(selectedSkinTypeOption)
-        self.selectedSkinTypeOption = nil
+
+        // Store score keyed by question group
+        let group = PersonalizationContent.skinTypeQuestions[skinTypeQuestionIndex].group
+        skinTypeScores[group] = selectedSkinTypeOption.score
+        skinTypeSelectedOptions[skinTypeQuestionIndex] = selectedSkinTypeOption
 
         if skinTypeQuestionIndex < PersonalizationContent.skinTypeQuestions.count - 1 {
             skinTypeQuestionIndex += 1
+            self.selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
         } else {
-            selectedSkinType = nil
+            // All 7 questions answered — calculate result
+            selectedSkinType = calculateSkinType()
             phase = .skinTypeConfirmation
+        }
+    }
+
+    private func calculateSkinType() -> SkinType {
+        // Unpack scores: Q1..Q5 (Q3 split into 3.1, 3.2, 3.2.1)
+        let q1   = skinTypeScores[.q1] ?? 1
+        let q2   = skinTypeScores[.q2] ?? 1
+        let q3_1 = skinTypeScores[.q3_1] ?? 1
+        let q3_2 = skinTypeScores[.q3_2] ?? 1
+        let q3_2_1 = skinTypeScores[.q3_2_1] ?? 1
+        let q4   = skinTypeScores[.q4] ?? 1
+        let q5   = skinTypeScores[.q5] ?? 1
+
+        let total = q1 + q2 + q3_1 + q3_2 + q3_2_1 + q4 + q5
+        let gap = q3_2 - q3_1
+
+        // Rule-based logic
+        if gap >= 1 {
+            return .combination
+        } else if total <= 16 {
+            return .dry
+        } else if total >= 21 {
+            return .oily
+        } else {
+            // total 17-20
+            return .normal
         }
     }
 
     func acceptSkinTypeResult() {
         phase = .skinSensitivitySelection
     }
+
+    // MARK: - Skin Sensitivity Assessment (Rule-Based)
 
     func continueSensitivityAssessment() {
         sensitivityAnswers.append(sensitivityValue)
@@ -243,12 +296,29 @@ final class PersonalizationViewModel {
         }
     }
 
+    private func calculateSkinSensitivity() -> SkinSensitivity {
+        let total = sensitivityAnswers.reduce(0, +)
+
+        switch total {
+        case 0...5:
+            return .normalResistant
+        case 6...13:
+            return .slightlySensitive
+        case 14...35:
+            return .sensitive
+        default: // 36-100
+            return .verySensitive
+        }
+    }
+
     func acceptSensitivityResult() {
         concernPageIndex = 0
         phase = .skinConcern
     }
 
-    func toggleConcern(_ concern: SkinConcern) {
+    // MARK: - Skin Concerns
+
+    func toggleConcern(_ concern: SkinConcernTag) {
         noConcernPageIndexes.remove(concernPageIndex)
 
         if selectedConcerns.contains(concern) {
@@ -262,13 +332,23 @@ final class PersonalizationViewModel {
         for concern in concernPage.concerns {
             selectedConcerns.remove(concern)
         }
-
         noConcernPageIndexes.insert(concernPageIndex)
     }
 
     func finishConcern() {
+        saveToSwiftData()
         phase = .summary
     }
+
+    private func saveToSwiftData() {
+        let profile = AppDataService.shared.fetchOrCreateProfile()
+        profile.skinTypeRaw = selectedSkinType?.rawValue
+        profile.skinSensitivityRaw = selectedSkinSensitivity?.rawValue
+        profile.selectedConcernIDs = selectedConcerns.map(\.rawValue)
+        AppDataService.shared.saveProfile(profile)
+    }
+
+    // MARK: - Back Navigation
 
     func goBack() {
         switch phase {
@@ -277,16 +357,17 @@ final class PersonalizationViewModel {
         case .skinTypeAssessment:
             if skinTypeQuestionIndex > 0 {
                 skinTypeQuestionIndex -= 1
-                selectedSkinTypeOption = skinTypeAnswers.popLast()
+                selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
             } else {
                 phase = .skinTypeSelection
                 selectedSkinTypeOption = nil
-                skinTypeAnswers.removeAll()
+                skinTypeScores.removeAll()
+                skinTypeSelectedOptions.removeAll()
             }
         case .skinTypeConfirmation:
             phase = .skinTypeAssessment
             skinTypeQuestionIndex = PersonalizationContent.skinTypeQuestions.count - 1
-            selectedSkinTypeOption = skinTypeAnswers.popLast()
+            selectedSkinTypeOption = skinTypeSelectedOptions[skinTypeQuestionIndex]
         case .skinTypeResult:
             phase = .skinTypeConfirmation
         case .skinSensitivitySelection:
@@ -328,7 +409,8 @@ final class PersonalizationViewModel {
 
     private func startSkinTypeAssessment() {
         skinTypeQuestionIndex = 0
-        skinTypeAnswers.removeAll()
+        skinTypeScores.removeAll()
+        skinTypeSelectedOptions.removeAll()
         selectedSkinTypeOption = nil
         phase = .skinTypeAssessment
     }
@@ -338,54 +420,5 @@ final class PersonalizationViewModel {
         sensitivityAnswers.removeAll()
         sensitivityValue = 0
         phase = .skinSensitivityAssessment
-    }
-
-    private func calculateSkinType() -> SkinType {
-        let scoredAnswers = skinTypeAnswers.compactMap(\.skinTypeScore)
-        let groupedScores = Dictionary(grouping: scoredAnswers, by: { $0 }).mapValues(\.count)
-
-        if groupedScores[.combination, default: 0] >= 2 {
-            return .combination
-        }
-
-        return groupedScores.max { lhs, rhs in
-            if lhs.value == rhs.value {
-                return lhs.key.priority < rhs.key.priority
-            }
-
-            return lhs.value < rhs.value
-        }?.key ?? .normal
-    }
-
-    private func calculateSkinSensitivity() -> SkinSensitivity {
-        let average = sensitivityAnswers.reduce(0, +) / Double(max(sensitivityAnswers.count, 1))
-
-        switch average {
-        case ..<2.5:
-            return .normalResistant
-        case ..<5:
-            return .slightlySensitive
-        case ..<7.5:
-            return .sensitive
-        default:
-            return .verySensitive
-        }
-    }
-}
-
-private extension SkinType {
-    var priority: Int {
-        switch self {
-        case .normal:
-            0
-        case .dry:
-            1
-        case .oily:
-            2
-        case .combination:
-            3
-        case .notSureYet:
-            -1
-        }
     }
 }

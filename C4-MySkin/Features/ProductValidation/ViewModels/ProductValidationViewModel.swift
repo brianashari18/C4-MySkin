@@ -114,26 +114,26 @@ final class ProductValidationViewModel: ObservableObject {
         currentStep = .review
     }
 
-    // MARK: - Validate
-    /// First call  → stores product 1 image + result, navigates to result screen.
-    /// Second call → stores product 2 image + result, switches to comparison layout.
+    // MARK: - Validate (Photo OCR + Resolve API)
+    /// Runs Vision OCR on the captured image to extract label text,
+    /// then resolves product via GET /api/products/resolve.
+    /// Shows Product Not Found modal if OCR fails or no matching product is found.
     func validate() {
+        guard let image = selectedImage else {
+            showProductNotFoundModal = true
+            return
+        }
+
         isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let self else { return }
-            self.isLoading = false
+        showProductNotFoundModal = false
 
-            if self.validationResult == nil {
-                self.firstProductSource = .camera
-                self.firstSelectedImage = self.selectedImage
-                self.validationResult = ValidationResult.stub
+        Task {
+            if let recognizedText = await OCRService.extractText(from: image) {
+                await resolveProductFromText(query: recognizedText)
             } else {
-                self.secondProductSource = .camera
-                self.secondSelectedImage = self.selectedImage
-                self.secondValidationResult = ValidationResult.stub2
+                isLoading = false
+                showProductNotFoundModal = true
             }
-
-            self.currentStep = .result
         }
     }
 
@@ -194,6 +194,30 @@ final class ProductValidationViewModel: ObservableObject {
         isSearching = false
     }
 
+    private func getProductDossierWithProfile(slug: String) async throws -> ProductDossierResponse {
+        let profile = AppDataService.shared.fetchOrCreateProfile()
+        let concernIDs = Set(profile.selectedConcernIDs)
+
+        // Map SkinConcernTag -> API concern categories
+        let acnePoreTags: Set<String> = ["Komedo hitam", "Komedo putih", "Jerawat merah", "Jerawat bernanah", "Jerawat dalam"]
+        let skinToneTags: Set<String> = ["Bekas jerawat gelap", "Kemerahan", "Flek", "Bercak coklat atau keabu-abuan"]
+        let sunDamageTags: Set<String> = ["Flek karena matahari", "Warna tidak merata"]
+
+        let concernAcnePore = concernIDs.intersection(acnePoreTags).isEmpty ? nil : "true"
+        let concernSkinTone = concernIDs.intersection(skinToneTags).isEmpty ? nil : "true"
+        let concernSunDamage = concernIDs.intersection(sunDamageTags).isEmpty ? nil : "true"
+
+        return try await apiClient.getProductDossier(
+            slug: slug,
+            enrich: true,
+            skinType: SkinType.apiValue(from: profile.skinTypeRaw),
+            skinSensitivity: SkinSensitivity.apiValue(from: profile.skinSensitivityRaw),
+            concernAcnePore: concernAcnePore,
+            concernSkinTone: concernSkinTone,
+            concernSunDamage: concernSunDamage
+        )
+    }
+
     private func fetchProducts(for query: String) async throws -> [ProductSearchItem] {
         let response = try await apiClient.searchProducts(query: query)
         return try await enrichProducts(response.results)
@@ -202,24 +226,30 @@ final class ProductValidationViewModel: ObservableObject {
     private func enrichProducts(_ products: [ProductSearchItem]) async throws -> [ProductSearchItem] {
         try await withThrowingTaskGroup(of: ProductSearchItem.self) { group in
             for product in products {
-                group.addTask { [apiClient] in
+                let name = product.name
+                let brand = product.brand
+                let url = product.url
+                let imageURL = product.imageURL
+                let highlights = product.highlights
+                let slug = product.slug
+                group.addTask {
                     // If search API already provided image_url, return immediately (fast cache path)
-                    guard product.imageURL == nil else {
+                    guard imageURL == nil else {
                         return product
                     }
 
-                    guard let slug = product.slug else {
+                    guard let slug else {
                         return product
                     }
 
                     do {
-                        let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+                        let dossier = try await self.getProductDossierWithProfile(slug: slug)
                         return ProductSearchItem(
-                            name: product.name,
-                            brand: product.brand ?? dossier.product.brand,
-                            url: product.url,
+                            name: name,
+                            brand: brand ?? dossier.product.brand,
+                            url: url,
                             imageURL: dossier.product.imageURL,
-                            highlights: dossier.product.highlights
+                            highlights: highlights
                         )
                     } catch {
                         return product
@@ -251,7 +281,7 @@ final class ProductValidationViewModel: ObservableObject {
         searchErrorMessage = nil
 
         do {
-            let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+            let dossier = try await getProductDossierWithProfile(slug: slug)
             let result = ValidationResult(dossier: dossier)
 
             if validationResult == nil {
@@ -269,6 +299,47 @@ final class ProductValidationViewModel: ObservableObject {
 
         isLoadingResult = false
         loadingProductID = nil
+    }
+
+    // MARK: - Product Resolution (GET /api/products/resolve)
+    /// Resolves OCR / complex product queries via GET /api/products/resolve.
+    /// On success, loads the product dossier and navigates to the result screen.
+    /// On failure or no match, triggers the Product Not Found modal overlay.
+    func resolveProductFromText(query: String) async {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 3 else {
+            showProductNotFoundModal = true
+            return
+        }
+
+        isLoading = true
+        showProductNotFoundModal = false
+
+        do {
+            let resolveResponse = try await apiClient.resolveProduct(query: trimmed)
+            if let resolvedProduct = resolveResponse.product, let slug = resolvedProduct.slug {
+                let dossier = try await getProductDossierWithProfile(slug: slug)
+                let result = ValidationResult(dossier: dossier)
+
+                if validationResult == nil {
+                    firstProductSource = .camera
+                    firstSelectedImage = selectedImage
+                    validationResult = result
+                } else {
+                    secondProductSource = .camera
+                    secondSelectedImage = selectedImage
+                    secondValidationResult = result
+                }
+
+                currentStep = .result
+            } else {
+                showProductNotFoundModal = true
+            }
+        } catch {
+            showProductNotFoundModal = true
+        }
+
+        isLoading = false
     }
 
     func leaveSearch() {

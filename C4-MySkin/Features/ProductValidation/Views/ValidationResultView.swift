@@ -12,17 +12,28 @@ import SwiftUI
 /// Supports single product layout and side-by-side comparison mode with ingredient match checkmarks and rich descriptions.
 struct ValidationResultView: View {
 
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ProductValidationViewModel
     @State private var showAddMenu: Bool = false
     @State private var isIngredientsExpanded: Bool = false
     @State private var isBenefitsExpanded: Bool = false
     @State private var isConcernsExpanded: Bool = false
 
+    let allowsComparison: Bool
     private let result: ValidationResult
 
-    init(viewModel: ProductValidationViewModel, result: ValidationResult) {
+    init(viewModel: ProductValidationViewModel, result: ValidationResult, allowsComparison: Bool = true) {
         self.viewModel = viewModel
         self.result = result
+        self.allowsComparison = allowsComparison
+    }
+
+    init(result: ValidationResult, allowsComparison: Bool = false) {
+        let vm = ProductValidationViewModel()
+        vm.validationResult = result
+        self.viewModel = vm
+        self.result = result
+        self.allowsComparison = allowsComparison
     }
 
     var body: some View {
@@ -32,7 +43,13 @@ struct ValidationResultView: View {
             VStack(spacing: 0) {
                 // MARK: - Navigation Bar
                 HStack {
-                    Button { viewModel.goBackFromResult() } label: {
+                    Button {
+                        if allowsComparison {
+                            viewModel.goBackFromResult()
+                        } else {
+                            dismiss()
+                        }
+                    } label: {
                         Image(systemName: "chevron.left")
                             .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
                             .foregroundStyle(Color.App.textDark)
@@ -42,8 +59,8 @@ struct ValidationResultView: View {
 
                     Spacer()
 
-                    // Show "+" only when not yet in comparison mode
-                    if !viewModel.isComparisonMode {
+                    // Show "+" only when not yet in comparison mode and comparison is allowed
+                    if !viewModel.isComparisonMode && allowsComparison {
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showAddMenu.toggle()
@@ -105,7 +122,23 @@ struct ValidationResultView: View {
                 }
 
                 // MARK: - Selesai Button (pinned)
-                Button { viewModel.finish() } label: {
+                Button {
+                    if viewModel.isComparisonMode,
+                       let first = viewModel.validationResult,
+                       let second = viewModel.secondValidationResult {
+                        // Mode Comparison: Simpan ke comparison history & balik ke home
+                        let p1 = PickedProductItem(name: first.productName, brand: first.brand, imageURL: first.imageURL)
+                        let p2 = PickedProductItem(name: second.productName, brand: second.brand, imageURL: second.imageURL)
+                        ProductHistoryStore.shared.saveComparison(product1: p1, product2: p2)
+                    } else if let result = viewModel.validationResult {
+                        // Mode Single Product: Simpan ke picked product & balik ke home
+                        let item = PickedProductItem(name: result.productName, brand: result.brand, imageURL: result.imageURL)
+                        ProductHistoryStore.shared.savePickedProduct(item)
+                    }
+
+                    viewModel.finish()
+                    dismiss()
+                } label: {
                     Text("Selesai")
                         .font(Font.App.nunitoRounded(size: 18, weight: .bold))
                         .foregroundStyle(.white)
@@ -155,12 +188,7 @@ struct ValidationResultView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.App.lightBlue.opacity(0.15))
 
-                if let image = viewModel.firstSelectedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(12)
-                } else if let imageURL = result.imageURL, let url = URL(string: imageURL) {
+                if let imageURL = result.imageURL, let url = URL(string: imageURL) {
                     CachedAsyncImage(url: url) {
                         placeholderImage
                     }
@@ -196,25 +224,26 @@ struct ValidationResultView: View {
     @ViewBuilder
     private func comparisonProductCards(first: ValidationResult, second: ValidationResult) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            productCard(image: viewModel.firstSelectedImage, brand: first.brand, name: first.productName)
-            productCard(image: viewModel.secondSelectedImage, brand: second.brand, name: second.productName)
+            productCard(imageURL: first.imageURL, brand: first.brand, name: first.productName)
+            productCard(imageURL: second.imageURL, brand: second.brand, name: second.productName)
         }
     }
 
     @ViewBuilder
-    private func productCard(image: UIImage?, brand: String, name: String) -> some View {
+    private func productCard(imageURL: String?, brand: String, name: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topTrailing) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color.App.lightBlue.opacity(0.15))
 
-                    if let image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                    } else if let imageURL = comparisonImageURL(for: name), let url = URL(string: imageURL) {
+                    if let imageURL, let url = URL(string: imageURL) {
+                        CachedAsyncImage(url: url) {
+                            comparisonPlaceholder
+                        }
+                        .scaledToFit()
+                        .padding(8)
+                    } else if let fallbackURL = comparisonImageURL(for: name), let url = URL(string: fallbackURL) {
                         CachedAsyncImage(url: url) {
                             comparisonPlaceholder
                         }
@@ -231,12 +260,6 @@ struct ValidationResultView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.App.sunnyYellow, lineWidth: 2)
                 )
-
-                // Bookmark / Heart icon
-                Image(systemName: "bookmark.fill")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.gray.opacity(0.6))
-                    .padding(8)
             }
 
             Text(brand)
@@ -311,7 +334,7 @@ struct ValidationResultView: View {
         }
     }
 
-    // MARK: - 2. Ingredients Section (with ✓ / ✗, row alignment, View More, and Tappable Sheet)
+    // MARK: - 2. Ingredients Section (with ✓ / ✗, row alignment, and View More)
 
     @ViewBuilder
     private func ingredientsSingleCard(result: ValidationResult) -> some View {
@@ -321,20 +344,12 @@ struct ValidationResultView: View {
         ValidationCardView(title: "Ingredients") {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(visibleChecks) { item in
-                    Button {
-                        viewModel.inspectIngredient(name: item.name)
-                    } label: {
-                        HStack {
-                            Text(item.name)
-                                .font(Font.App.nunitoRounded(size: 14, weight: .medium))
-                                .foregroundStyle(Color.App.darkBlue)
-                            Spacer()
-                            Image(systemName: item.isPresent ? "checkmark" : "xmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(item.isPresent ? Color.App.darkBlue : Color.gray.opacity(0.5))
-                        }
+                    HStack {
+                        Text(item.name)
+                            .font(Font.App.nunitoRounded(size: 14, weight: .medium))
+                            .foregroundStyle(Color.App.darkBlue)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
                 }
 
                 if result.ingredientChecks.count > displayLimit {
@@ -365,8 +380,93 @@ struct ValidationResultView: View {
     private func ingredientsComparisonCard(first: ValidationResult, second: ValidationResult) -> some View {
         let set1 = Set(first.ingredientChecks.filter(\.isPresent).map { $0.name.lowercased() })
         let set2 = Set(second.ingredientChecks.filter(\.isPresent).map { $0.name.lowercased() })
+        let displayLimit = 6
+        let totalMasterCount = countMasterNames(first: first, second: second)
+        let visibleMasterNames = buildMasterNames(first: first, second: second)
 
-        // Create unified master ingredient list preserving order for exact line-by-line alignment
+        ValidationCardView(title: "Ingredients") {
+            VStack(spacing: 10) {
+                HStack(alignment: .top, spacing: 0) {
+                    // Product 1 Column
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(visibleMasterNames, id: \.self) { name in
+                            let isPresentInFirst = set1.contains(name.lowercased())
+                            let isMatchInBoth = isPresentInFirst && set2.contains(name.lowercased())
+
+                            HStack {
+                                Text(name)
+                                    .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
+                                    .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.6)))
+                                Spacer()
+                                Image(systemName: isPresentInFirst ? "checkmark" : "xmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.4))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Rectangle()
+                        .fill(Color.App.sunnyYellow.opacity(0.6))
+                        .frame(width: 1.5)
+
+                    // Product 2 Column
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(visibleMasterNames, id: \.self) { name in
+                            let isPresentInSecond = set2.contains(name.lowercased())
+                            let isMatchInBoth = isPresentInSecond && set1.contains(name.lowercased())
+
+                            HStack {
+                                Text(name)
+                                    .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
+                                    .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.6)))
+                                Spacer()
+                                Image(systemName: isPresentInSecond ? "checkmark" : "xmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.4))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if totalMasterCount > displayLimit {
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            isIngredientsExpanded.toggle()
+                        }
+                    } label: {
+                        HStack {
+                            Text(isIngredientsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(totalMasterCount - displayLimit)+)")
+                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
+                                .foregroundStyle(Color.App.mediumBlue)
+                            Image(systemName: isIngredientsExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.App.mediumBlue)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func countMasterNames(first: ValidationResult, second: ValidationResult) -> Int {
+        var seen = Set<String>()
+        for item in first.ingredientChecks where item.isPresent {
+            seen.insert(item.name.lowercased())
+        }
+        for item in second.ingredientChecks where item.isPresent {
+            seen.insert(item.name.lowercased())
+        }
+        return seen.count
+    }
+
+    private func buildMasterNames(first: ValidationResult, second: ValidationResult) -> [String] {
         var masterNames: [String] = []
         var seen = Set<String>()
 
@@ -387,108 +487,47 @@ struct ValidationResultView: View {
         }
 
         let displayLimit = 6
-        let visibleMasterNames = isIngredientsExpanded ? masterNames : Array(masterNames.prefix(displayLimit))
-
-        return ValidationCardView(title: "Ingredients") {
-            VStack(spacing: 10) {
-                HStack(alignment: .top, spacing: 0) {
-                    // Product 1 Column
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(visibleMasterNames, id: \.self) { name in
-                            let isPresentInFirst = set1.contains(name.lowercased())
-                            let isMatchInBoth = isPresentInFirst && set2.contains(name.lowercased())
-
-                            Button {
-                                viewModel.inspectIngredient(name: name)
-                            } label: {
-                                HStack {
-                                    Text(name)
-                                        .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
-                                        .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.6)))
-                                    Spacer()
-                                    Image(systemName: isPresentInFirst ? "checkmark" : "xmark")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(isPresentInFirst ? Color.App.darkBlue : Color.gray.opacity(0.4))
-                                }
-                                .background(isMatchInBoth ? Color.gray.opacity(0.12) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Rectangle()
-                        .fill(Color.App.sunnyYellow.opacity(0.6))
-                        .frame(width: 1.5)
-
-                    // Product 2 Column
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(visibleMasterNames, id: \.self) { name in
-                            let isPresentInSecond = set2.contains(name.lowercased())
-                            let isMatchInBoth = isPresentInSecond && set1.contains(name.lowercased())
-
-                            Button {
-                                viewModel.inspectIngredient(name: name)
-                            } label: {
-                                HStack {
-                                    Text(name)
-                                        .font(Font.App.nunitoRounded(size: 13, weight: isMatchInBoth ? .bold : .medium))
-                                        .foregroundStyle(isMatchInBoth ? Color.App.darkBlue : (isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.6)))
-                                    Spacer()
-                                    Image(systemName: isPresentInSecond ? "checkmark" : "xmark")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundStyle(isPresentInSecond ? Color.App.darkBlue : Color.gray.opacity(0.4))
-                                }
-                                .background(isMatchInBoth ? Color.gray.opacity(0.12) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if masterNames.count > displayLimit {
-                    Button {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            isIngredientsExpanded.toggle()
-                        }
-                    } label: {
-                        HStack {
-                            Text(isIngredientsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(masterNames.count - displayLimit)+)")
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.mediumBlue)
-                            Image(systemName: isIngredientsExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color.App.mediumBlue)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
+        return isIngredientsExpanded ? masterNames : Array(masterNames.prefix(displayLimit))
     }
 
-    // MARK: - 3. Key Ingredients Section (with Best For)
+    // MARK: - 3. Key Ingredients Section (with Clickable Slate Blue Capsule Pills & Chevron)
 
     @ViewBuilder
     private func keyIngredientsSingleCard(result: ValidationResult) -> some View {
         ValidationCardView(title: "Key Ingredients") {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(result.keyIngredientItems) { item in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.name)
-                            .font(Font.App.nunitoRounded(size: 14, weight: .bold))
-                            .foregroundStyle(Color.App.darkBlue)
-                        Text(item.description)
-                            .font(Font.App.nunitoRounded(size: 12, weight: .medium))
-                            .foregroundStyle(Color.gray)
+                    Button {
+                        viewModel.inspectIngredient(name: item.name)
+                    } label: {
+                        HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.name)
+                                    .font(Font.App.nunitoRounded(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+
+                                if !item.description.isEmpty {
+                                    Text(item.description)
+                                        .font(Font.App.nunitoRounded(size: 11, weight: .medium))
+                                        .foregroundStyle(Color.white.opacity(0.85))
+                                        .multilineTextAlignment(.leading)
+                                }
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 67/255, green: 109/255, blue: 150/255))
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if !result.bestForSummary.isEmpty {
@@ -512,16 +551,42 @@ struct ValidationResultView: View {
         ValidationCardView(title: "Key Ingredients") {
             HStack(alignment: .top, spacing: 0) {
                 // Product 1 Column
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(first.keyIngredientItems) { item in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.darkBlue)
-                            Text(item.description)
-                                .font(Font.App.nunitoRounded(size: 11, weight: .medium))
-                                .foregroundStyle(Color.gray)
+                        Button {
+                            viewModel.inspectIngredient(name: item.name)
+                        } label: {
+                            HStack(alignment: .center, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(item.name)
+                                        .font(Font.App.nunitoRounded(size: 12, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
+
+                                    if !item.description.isEmpty {
+                                        Text(item.description)
+                                            .font(Font.App.nunitoRounded(size: 10, weight: .medium))
+                                            .foregroundStyle(Color.white.opacity(0.80))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.85)
+                                    }
+                                }
+
+                                Spacer(minLength: 2)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 67/255, green: 109/255, blue: 150/255))
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
 
                     if !first.bestForSummary.isEmpty {
@@ -536,7 +601,7 @@ struct ValidationResultView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Rectangle()
@@ -544,16 +609,42 @@ struct ValidationResultView: View {
                     .frame(width: 1.5)
 
                 // Product 2 Column
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(second.keyIngredientItems) { item in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(item.name)
-                                .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                                .foregroundStyle(Color.App.darkBlue)
-                            Text(item.description)
-                                .font(Font.App.nunitoRounded(size: 11, weight: .medium))
-                                .foregroundStyle(Color.gray)
+                        Button {
+                            viewModel.inspectIngredient(name: item.name)
+                        } label: {
+                            HStack(alignment: .center, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(item.name)
+                                        .font(Font.App.nunitoRounded(size: 12, weight: .bold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.85)
+
+                                    if !item.description.isEmpty {
+                                        Text(item.description)
+                                            .font(Font.App.nunitoRounded(size: 10, weight: .medium))
+                                            .foregroundStyle(Color.white.opacity(0.80))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.85)
+                                    }
+                                }
+
+                                Spacer(minLength: 2)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 67/255, green: 109/255, blue: 150/255))
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
 
                     if !second.bestForSummary.isEmpty {
@@ -568,7 +659,7 @@ struct ValidationResultView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

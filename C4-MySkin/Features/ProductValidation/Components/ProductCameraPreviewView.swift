@@ -1,5 +1,5 @@
 //
-//  CameraPreviewView.swift
+//  ProductCameraPreviewView.swift
 //  C4-MySkin
 //
 //  Created by Brian Anashari on 10/08/26.
@@ -10,7 +10,7 @@ import AVFoundation
 
 /// A UIViewRepresentable that renders the live camera preview
 /// from an existing AVCaptureSession into a SwiftUI view.
-struct CameraPreviewView: UIViewRepresentable {
+struct ProductCameraPreviewView: UIViewRepresentable {
 
     let session: AVCaptureSession
 

@@ -66,7 +66,7 @@ struct PersonalizationProgressHeader: View {
         .frame(width: 240, height: 30)
         .frame(maxWidth: .infinity)
         .padding(.top, 30)
-        .accessibilityLabel("Langkah \(section.progressIndex + 1) dari \(PersonalizationSection.visibleProgressSections.count)")
+        .accessibilityLabel("Step \(section.progressIndex + 1) of \(PersonalizationSection.visibleProgressSections.count)")
     }
 }
 
@@ -132,7 +132,7 @@ private struct PersonalizationSideNavigationButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
-        .accessibilityLabel(systemName == "chevron.left" ? "Kembali" : "Lanjut")
+        .accessibilityLabel(systemName == "chevron.left" ? "Back" : "Next")
     }
 }
 
@@ -211,7 +211,7 @@ struct PersonalizationMascotFooter: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            MascotLottieView(animation: showsNote ? .head : mascotAnimation)
+            OnboardingMascotLottieView(animation: showsNote ? .head : mascotAnimation)
                 .frame(width: 420, height: 420)
                 .scaleEffect(showsNote ? 1.04 : 2)
                 .offset(x: -5, y: showsNote ? 140 : 100)
@@ -332,8 +332,8 @@ struct PersonalizationSliderQuestion: View {
                         }
                 )
                 .accessibilityElement()
-                .accessibilityLabel("Tingkat sensitivitas")
-                .accessibilityValue("\(Int(value.rounded())) dari 10")
+                .accessibilityLabel("Sensitivity level")
+                .accessibilityValue("\(Int(value.rounded())) out of 10")
             }
             .frame(width: 280, height: 260)
 

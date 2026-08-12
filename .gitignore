@@ -1,2 +1,17 @@
-.env
+# macOS
 .DS_Store
+
+# Environment
+.env
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+
+# Node
+node_modules/
+
+# Build products
+build/
