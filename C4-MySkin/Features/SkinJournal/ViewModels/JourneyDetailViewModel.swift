@@ -14,7 +14,7 @@ final class JourneyDetailViewModel {
 
     var isStarting: Bool = false
 
-    init(product: SkincareProduct, store: SkinJournalStore = .shared) {
+    init(product: SkincareProduct, store: SkinJournalStore) {
         self.product = product
         self.store = store
     }

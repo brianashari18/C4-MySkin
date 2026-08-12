@@ -16,7 +16,7 @@ final class JourneyMainViewModel {
     var showJournalEntry: Bool = false
     var showSelfAssessment: Bool = false
 
-    init(journey: SkincareJourney, store: SkinJournalStore = .shared) {
+    init(journey: SkincareJourney, store: SkinJournalStore) {
         self.journey = journey
         self.store = store
     }

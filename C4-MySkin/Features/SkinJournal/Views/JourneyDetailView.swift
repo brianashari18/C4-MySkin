@@ -76,7 +76,7 @@ struct JourneyDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
-            viewModel = JourneyDetailViewModel(product: product)
+            viewModel = JourneyDetailViewModel(product: product, store: .shared)
         }
     }
 }

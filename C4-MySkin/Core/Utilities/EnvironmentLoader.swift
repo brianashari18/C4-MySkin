@@ -8,7 +8,7 @@
 import Foundation
 
 enum EnvironmentLoader {
-    static func value(forKey key: String) -> String? {
+    nonisolated static func value(forKey key: String) -> String? {
         if let processValue = ProcessInfo.processInfo.environment[key], !processValue.isEmpty {
             return processValue
         }

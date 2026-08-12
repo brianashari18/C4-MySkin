@@ -365,29 +365,7 @@ struct ValidationResultView: View {
     private func ingredientsComparisonCard(first: ValidationResult, second: ValidationResult) -> some View {
         let set1 = Set(first.ingredientChecks.filter(\.isPresent).map { $0.name.lowercased() })
         let set2 = Set(second.ingredientChecks.filter(\.isPresent).map { $0.name.lowercased() })
-
-        // Create unified master ingredient list preserving order for exact line-by-line alignment
-        var masterNames: [String] = []
-        var seen = Set<String>()
-
-        for item in first.ingredientChecks where item.isPresent {
-            let key = item.name.lowercased()
-            if !seen.contains(key) {
-                seen.insert(key)
-                masterNames.append(item.name)
-            }
-        }
-
-        for item in second.ingredientChecks where item.isPresent {
-            let key = item.name.lowercased()
-            if !seen.contains(key) {
-                seen.insert(key)
-                masterNames.append(item.name)
-            }
-        }
-
-        let displayLimit = 6
-        let visibleMasterNames = isIngredientsExpanded ? masterNames : Array(masterNames.prefix(displayLimit))
+        let visibleMasterNames = buildMasterNames(first: first, second: second)
 
         ValidationCardView(title: "Ingredients") {
             VStack(spacing: 10) {
@@ -472,6 +450,30 @@ struct ValidationResultView: View {
                 }
             }
         }
+    }
+
+    private func buildMasterNames(first: ValidationResult, second: ValidationResult) -> [String] {
+        var masterNames: [String] = []
+        var seen = Set<String>()
+
+        for item in first.ingredientChecks where item.isPresent {
+            let key = item.name.lowercased()
+            if !seen.contains(key) {
+                seen.insert(key)
+                masterNames.append(item.name)
+            }
+        }
+
+        for item in second.ingredientChecks where item.isPresent {
+            let key = item.name.lowercased()
+            if !seen.contains(key) {
+                seen.insert(key)
+                masterNames.append(item.name)
+            }
+        }
+
+        let displayLimit = 6
+        return isIngredientsExpanded ? masterNames : Array(masterNames.prefix(displayLimit))
     }
 
     // MARK: - 3. Key Ingredients Section (with Best For)

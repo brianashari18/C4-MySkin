@@ -7,7 +7,7 @@ import SwiftUI
 import AVFoundation
 
 struct SkinJournalRootView: View {
-    @State private var viewModel = SkinJournalRootViewModel()
+    @State private var viewModel = SkinJournalRootViewModel(store: .shared)
     @State private var path = NavigationPath()
     @State private var selectedProduct: SkincareProduct?
 
