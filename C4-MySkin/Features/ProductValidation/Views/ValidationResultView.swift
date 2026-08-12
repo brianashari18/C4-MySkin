@@ -231,12 +231,6 @@ struct ValidationResultView: View {
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.App.sunnyYellow, lineWidth: 2)
                 )
-
-                // Bookmark / Heart icon
-                Image(systemName: "bookmark.fill")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.gray.opacity(0.6))
-                    .padding(8)
             }
 
             Text(brand)
