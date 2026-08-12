@@ -45,6 +45,7 @@ struct JourneyDetailView: View {
 
     var body: some View {
         ZStack {
+            // Soft ice blue background gradient
             LinearGradient(
                 colors: [
                     Color(red: 0.94, green: 0.97, blue: 1.0),
@@ -73,6 +74,7 @@ struct JourneyDetailView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
+                        // Timeline Progress Indicator Bar (hidden when opened from calendar view)
                         if !hideProgressBar {
                             JournalTimelineHeader(
                                 milestoneNumber: currentMilestoneOrder,
@@ -232,27 +234,6 @@ struct JourneyDetailView: View {
         formatter.dateFormat = "dd MMMM yyyy"
         return formatter.string(from: date)
     }
-
-    private func summaryRow(label: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: 24) {
-            Text(label)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(red: 0.38, green: 0.61, blue: 0.93))
-                .frame(width: 140, alignment: .leading)
-
-            Text(value)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "id_ID")
-        formatter.dateFormat = "dd MMMM yyyy"
-        return formatter.string(from: date)
-    }
 }
 
 // MARK: - Read-Only Yellow Ruled Paper Box Component
@@ -294,6 +275,7 @@ private struct YellowRuledPaperReadOnlyBox: View {
     }
 }
 
+// MARK: - Journal Timeline Header Component (Interaktif per Flag)
 private struct JournalTimelineHeader: View {
     let milestoneNumber: Int
     let totalEntries: Int
@@ -312,6 +294,7 @@ private struct JournalTimelineHeader: View {
     var body: some View {
         VStack(spacing: 4) {
             ZStack {
+                // Background Progress Bar Slider Track
                 GeometryReader { geometry in
                     let totalWidth = geometry.size.width
                     let fillWidth = totalWidth * progressRatio
@@ -340,19 +323,21 @@ private struct JournalTimelineHeader: View {
                 }
                 .padding(.horizontal, 16)
 
+                // Timeline Icon Nodes (Clickable Flag Buttons)
                 HStack {
                     ForEach(0..<nodeCount, id: \.self) { nodeIndex in
                         let iconName = nodeIndex == 0 ? "jar.fill" : "flag.fill"
                         let isSelected = nodeIndex == selectedIndex
                         let isAvailable = nodeIndex < totalEntries
 
-                        Button {
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        Button(action: {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
                             let targetIndex = min(nodeIndex, max(0, totalEntries - 1))
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 selectedIndex = targetIndex
                             }
-                        } label: {
+                        }) {
                             CircleIconNode(
                                 iconName: iconName,
                                 isSelected: isSelected,
@@ -361,7 +346,9 @@ private struct JournalTimelineHeader: View {
                         }
                         .buttonStyle(.plain)
 
-                        if nodeIndex < nodeCount - 1 { Spacer() }
+                        if nodeIndex < nodeCount - 1 {
+                            Spacer()
+                        }
                     }
                 }
                 .padding(.horizontal, 12)
@@ -383,9 +370,7 @@ private struct CircleIconNode: View {
                 .fill(
                     isSelected
                         ? Color(red: 0.16, green: 0.35, blue: 0.54)
-                        : (isAvailable
-                            ? Color(red: 0.74, green: 0.83, blue: 0.93)
-                            : Color(red: 0.88, green: 0.90, blue: 0.93))
+                        : (isAvailable ? Color(red: 0.74, green: 0.83, blue: 0.93) : Color(red: 0.88, green: 0.90, blue: 0.93))
                 )
                 .frame(width: isSelected ? 36 : 30, height: isSelected ? 36 : 30)
 
@@ -400,9 +385,7 @@ private struct CircleIconNode: View {
                 .foregroundStyle(
                     isSelected
                         ? Color.white
-                        : (isAvailable
-                            ? Color(red: 0.16, green: 0.35, blue: 0.54)
-                            : Color(red: 0.60, green: 0.68, blue: 0.76))
+                        : (isAvailable ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.60, green: 0.68, blue: 0.76))
                 )
         }
         .frame(width: 42, height: 42)

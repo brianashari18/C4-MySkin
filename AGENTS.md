@@ -199,8 +199,8 @@ Catatan: `simctl terminate` itu SIGKILL → UserDefaults TIDAK ter-flush ke disk
 - 2026-08-13: Mengubah seluruh copy UI onboarding di `OnboardingView.swift` dari bahasa Indonesia ke bahasa Inggris, termasuk dialog mascot, CTA, prompt nama, pertanyaan skin type/sensitivity, dan label pilihan. Label Inggris dibuat sebagai display mapping lokal agar raw value model/persistensi tetap kompatibel.
 - 2026-08-13: Mengubah seluruh copy UI fitur `Personalization` menjadi bahasa Inggris yang familiar: pilihan awal, bank pertanyaan skin type dan sensitivity, concern pages, hasil, CTA, progress, accessibility labels, serta pesan mascot. Raw value model tetap dipertahankan untuk kompatibilitas penyimpanan, sementara display mapping Inggris digunakan pada UI.
 - 2026-08-13: Mempercepat transisi tombol `Start Quiz` menuju pilihan skin type pada onboarding. Durasi animasi mascot turun dan delay pergantian layar dikurangi dari 0,42 detik menjadi 0,20 detik dengan kurva `easeOut`, sehingga pilihan skin type muncul lebih responsif.
-
-
+- 2026-08-13: Menyamakan presentasi UI `SelfAssessmentView` dengan feature Personalization tanpa mengubah state maupun alur assessment: progress bar kini memakai track capsule dan milestone node berlapis, tombol Back/Next memakai tombol bulat 60pt ber-ring putih, serta footer memakai `PersonalizationMascotFooter` dengan animasi mascot onboarding dan aset `bublecloud`. Validasi pilihan, perpindahan tiga langkah, dan payload `onSubmit` tetap dipertahankan. Build iOS Simulator sukses.
+- 2026-08-13: Memperbarui interaksi `SelfAssessmentView`: memilih jawaban pada langkah 1 kini langsung berpindah ke langkah 2, dan memilih jawaban langkah 2 langsung berpindah ke langkah 3 tanpa menekan Next. Pilihan tetap tersimpan dan tampil selected saat pengguna kembali. Langkah 3 tetap multi-select dan membutuhkan tombol Next untuk submit. Seluruh option button kini mengikuti selected state Personalisasi (background sky-blue, teks putih, rounded rectangle, border dan shadow); `None of the above` juga memakai state visual yang sama. Build iOS Simulator sukses.
 
 
 
