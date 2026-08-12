@@ -47,7 +47,7 @@ struct CameraScannerView: View {
                     ZStack {
                         // Always show the preview layer — it's black until
                         // the session starts, which is standard camera UX.
-                        CameraPreviewView(session: viewModel.cameraService.session)
+                        ProductValidationCameraPreviewView(session: viewModel.cameraService.session)
                             .clipShape(RoundedRectangle(cornerRadius: 24))
 
                         // Only overlay an error if permission was explicitly denied
