@@ -196,14 +196,25 @@ final class ProductValidationViewModel: ObservableObject {
 
     private func getProductDossierWithProfile(slug: String) async throws -> ProductDossierResponse {
         let profile = AppDataService.shared.fetchOrCreateProfile()
+        let concernIDs = Set(profile.selectedConcernIDs)
+
+        // Map SkinConcernTag -> API concern categories
+        let acnePoreTags: Set<String> = ["Komedo hitam", "Komedo putih", "Jerawat merah", "Jerawat bernanah", "Jerawat dalam"]
+        let skinToneTags: Set<String> = ["Bekas jerawat gelap", "Kemerahan", "Flek", "Bercak coklat atau keabu-abuan"]
+        let sunDamageTags: Set<String> = ["Flek karena matahari", "Warna tidak merata"]
+
+        let concernAcnePore = concernIDs.intersection(acnePoreTags).isEmpty ? nil : "true"
+        let concernSkinTone = concernIDs.intersection(skinToneTags).isEmpty ? nil : "true"
+        let concernSunDamage = concernIDs.intersection(sunDamageTags).isEmpty ? nil : "true"
+
         return try await apiClient.getProductDossier(
             slug: slug,
             enrich: true,
             skinType: profile.skinTypeRaw,
             skinSensitivity: profile.skinSensitivityRaw,
-            concernAcnePore: nil,
-            concernSkinTone: nil,
-            concernSunDamage: nil
+            concernAcnePore: concernAcnePore,
+            concernSkinTone: concernSkinTone,
+            concernSunDamage: concernSunDamage
         )
     }
 
