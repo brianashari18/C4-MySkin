@@ -147,13 +147,49 @@ struct ValidationResult {
             IngredientCheckItem(name: $0.name, isPresent: true)
         }
 
-        let bItems = (dossier.product.whatItDoes.isEmpty ? dossier.product.highlights : dossier.product.whatItDoes).map {
-            BenefitItem(title: $0.capitalized, description: "Supports healthy skin texture and hydration.")
+        let brandRepText = dossier.brandReputation?.narrative ?? "\(dossier.product.brand) is an established skincare brand known for targeted formulations."
+        let reviewSumText = averageRating != nil ? "Rated \(reviewText). User reviews highlight effective performance and positive skin feel." : "No user reviews yet for this formulation."
+        let priceSumText = dossier.price?.value != nil ? "Priced at \(priceText) for regular daily routine use." : "Standard price point in category."
+
+        let keyIngNames = keyIngs.prefix(3).map(\.name).joined(separator: ", ")
+        let ingMatchText = keyIngs.isEmpty ? "Formulated with balanced cosmetic ingredients." : "Features key actives: \(keyIngNames)."
+
+        let bItems: [BenefitItem]
+        if !dossier.product.keyIngredients.isEmpty {
+            bItems = Array(dossier.product.keyIngredients.prefix(3)).map {
+                BenefitItem(
+                    title: $0.name,
+                    description: $0.benefits.joined(separator: ", ").capitalized.ifEmpty("Supports skin health and function.")
+                )
+            }
+        } else {
+            bItems = Array((dossier.product.whatItDoes.isEmpty ? dossier.product.highlights : dossier.product.whatItDoes).prefix(3)).map {
+                BenefitItem(title: $0.capitalized, description: "Supports healthy skin texture and hydration.")
+            }
         }
 
-        let cItems = dossier.ingredientProfiles.flatMap(\.sideEffects).map {
-            ConcernItem(title: $0.capitalized, description: "Potential mild reaction for sensitive skin types.")
+        let cItems: [ConcernItem]
+        if let concerns = dossier.concerns, !concerns.isEmpty {
+            // Prioritize MODERATE / HIGH severity concerns or non-zero incidence
+            let relevantConcerns = concerns.filter { c in
+                let sev = (c.severity ?? "").uppercased()
+                let inc = c.incidence ?? ""
+                return sev == "MODERATE" || sev == "HIGH" || (inc != "0.0%" && inc != "0%")
+            }
+            let listToUse = relevantConcerns.isEmpty ? concerns : relevantConcerns
+
+            cItems = Array(listToUse.prefix(3)).map { c in
+                let ingList = c.ingredients?.prefix(3).joined(separator: ", ") ?? ""
+                let detail = ingList.isEmpty ? "Severity: \(c.severity?.capitalized ?? "Mild") (\(c.incidence ?? "N/A"))." : "Severity: \(c.severity?.capitalized ?? "Mild") (\(c.incidence ?? "N/A")). Key triggers: \(ingList)."
+                return ConcernItem(title: c.name, description: detail)
+            }
+        } else {
+            cItems = Array(dossier.ingredientProfiles.flatMap(\.sideEffects).prefix(3)).map {
+                ConcernItem(title: $0.capitalized, description: "Potential mild reaction for sensitive skin types.")
+            }
         }
+
+        let bestForText = dossier.product.description ?? "Daily skincare routine suited for targeted skin care."
 
         self.init(
             productName: dossier.product.name,
@@ -161,13 +197,13 @@ struct ValidationResult {
             imageURL: dossier.product.imageURL,
             price: priceText,
             review: reviewText,
-            brandReputation: "Established skincare brand known for targeted formulations.",
-            reviewSummary: "User reviews highlight effective cleansing and positive skin feel.",
-            priceSummary: "Standard price point for daily skincare routine.",
-            ingredientsMatchSummary: "Formulated with targeted active ingredients.",
+            brandReputation: brandRepText,
+            reviewSummary: reviewSumText,
+            priceSummary: priceSumText,
+            ingredientsMatchSummary: ingMatchText,
             ingredientChecks: ings,
             keyIngredientItems: keyIngs,
-            bestForSummary: "Daily skincare use suited for routine care.",
+            bestForSummary: bestForText,
             benefitItems: bItems,
             concernItems: cItems,
             isSuited: !keyIngs.isEmpty

@@ -210,8 +210,8 @@ final class ProductValidationViewModel: ObservableObject {
         return try await apiClient.getProductDossier(
             slug: slug,
             enrich: true,
-            skinType: profile.skinTypeRaw,
-            skinSensitivity: profile.skinSensitivityRaw,
+            skinType: SkinType.apiValue(from: profile.skinTypeRaw),
+            skinSensitivity: SkinSensitivity.apiValue(from: profile.skinSensitivityRaw),
             concernAcnePore: concernAcnePore,
             concernSkinTone: concernSkinTone,
             concernSunDamage: concernSunDamage
@@ -232,7 +232,7 @@ final class ProductValidationViewModel: ObservableObject {
                 let imageURL = product.imageURL
                 let highlights = product.highlights
                 let slug = product.slug
-                group.addTask { [apiClient] in
+                group.addTask {
                     // If search API already provided image_url, return immediately (fast cache path)
                     guard imageURL == nil else {
                         return product

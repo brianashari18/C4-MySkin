@@ -12,6 +12,7 @@ import SwiftUI
 /// Supports single product layout and side-by-side comparison mode with ingredient match checkmarks and rich descriptions.
 struct ValidationResultView: View {
 
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ProductValidationViewModel
     @State private var showAddMenu: Bool = false
     @State private var isIngredientsExpanded: Bool = false
@@ -105,7 +106,23 @@ struct ValidationResultView: View {
                 }
 
                 // MARK: - Selesai Button (pinned)
-                Button { viewModel.finish() } label: {
+                Button {
+                    if viewModel.isComparisonMode,
+                       let first = viewModel.validationResult,
+                       let second = viewModel.secondValidationResult {
+                        // Mode Comparison: Simpan ke comparison history & balik ke home
+                        let p1 = PickedProductItem(name: first.productName, brand: first.brand, imageURL: first.imageURL)
+                        let p2 = PickedProductItem(name: second.productName, brand: second.brand, imageURL: second.imageURL)
+                        ProductHistoryStore.shared.saveComparison(product1: p1, product2: p2)
+                    } else if let result = viewModel.validationResult {
+                        // Mode Single Product: Simpan ke picked product & balik ke home
+                        let item = PickedProductItem(name: result.productName, brand: result.brand, imageURL: result.imageURL)
+                        ProductHistoryStore.shared.savePickedProduct(item)
+                    }
+
+                    viewModel.finish()
+                    dismiss()
+                } label: {
                     Text("Selesai")
                         .font(Font.App.nunitoRounded(size: 18, weight: .bold))
                         .foregroundStyle(.white)
@@ -155,12 +172,7 @@ struct ValidationResultView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.App.lightBlue.opacity(0.15))
 
-                if let image = viewModel.firstSelectedImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(12)
-                } else if let imageURL = result.imageURL, let url = URL(string: imageURL) {
+                if let imageURL = result.imageURL, let url = URL(string: imageURL) {
                     CachedAsyncImage(url: url) {
                         placeholderImage
                     }
@@ -196,25 +208,26 @@ struct ValidationResultView: View {
     @ViewBuilder
     private func comparisonProductCards(first: ValidationResult, second: ValidationResult) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            productCard(image: viewModel.firstSelectedImage, brand: first.brand, name: first.productName)
-            productCard(image: viewModel.secondSelectedImage, brand: second.brand, name: second.productName)
+            productCard(imageURL: first.imageURL, brand: first.brand, name: first.productName)
+            productCard(imageURL: second.imageURL, brand: second.brand, name: second.productName)
         }
     }
 
     @ViewBuilder
-    private func productCard(image: UIImage?, brand: String, name: String) -> some View {
+    private func productCard(imageURL: String?, brand: String, name: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topTrailing) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color.App.lightBlue.opacity(0.15))
 
-                    if let image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(8)
-                    } else if let imageURL = comparisonImageURL(for: name), let url = URL(string: imageURL) {
+                    if let imageURL, let url = URL(string: imageURL) {
+                        CachedAsyncImage(url: url) {
+                            comparisonPlaceholder
+                        }
+                        .scaledToFit()
+                        .padding(8)
+                    } else if let fallbackURL = comparisonImageURL(for: name), let url = URL(string: fallbackURL) {
                         CachedAsyncImage(url: url) {
                             comparisonPlaceholder
                         }
@@ -323,9 +336,9 @@ struct ValidationResultView: View {
                                 .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                                 .foregroundStyle(Color.App.darkBlue)
                             Spacer()
-                            Image(systemName: item.isPresent ? "checkmark" : "xmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(item.isPresent ? Color.App.darkBlue : Color.gray.opacity(0.5))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.gray.opacity(0.6))
                         }
                     }
                     .buttonStyle(.plain)
