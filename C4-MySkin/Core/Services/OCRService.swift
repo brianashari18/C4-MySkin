@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import Vision
+@preconcurrency import Vision
 
 /// Service for extracting text from product label photos using Apple's native Vision framework.
 struct OCRService {
@@ -36,12 +36,10 @@ struct OCRService {
             request.recognitionLanguages = ["en-US", "id-ID"]
 
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    try handler.perform([request])
-                } catch {
-                    continuation.resume(returning: nil)
-                }
+            do {
+                try handler.perform([request])
+            } catch {
+                continuation.resume(returning: nil)
             }
         }
     }

@@ -389,7 +389,7 @@ struct ValidationResultView: View {
         let displayLimit = 6
         let visibleMasterNames = isIngredientsExpanded ? masterNames : Array(masterNames.prefix(displayLimit))
 
-        return ValidationCardView(title: "Ingredients") {
+        ValidationCardView(title: "Ingredients") {
             VStack(spacing: 10) {
                 HStack(alignment: .top, spacing: 0) {
                     // Product 1 Column

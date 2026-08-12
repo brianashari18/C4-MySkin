@@ -202,24 +202,30 @@ final class ProductValidationViewModel: ObservableObject {
     private func enrichProducts(_ products: [ProductSearchItem]) async throws -> [ProductSearchItem] {
         try await withThrowingTaskGroup(of: ProductSearchItem.self) { group in
             for product in products {
+                let name = product.name
+                let brand = product.brand
+                let url = product.url
+                let imageURL = product.imageURL
+                let highlights = product.highlights
+                let slug = product.slug
                 group.addTask { [apiClient] in
                     // If search API already provided image_url, return immediately (fast cache path)
-                    guard product.imageURL == nil else {
+                    guard imageURL == nil else {
                         return product
                     }
 
-                    guard let slug = product.slug else {
+                    guard let slug else {
                         return product
                     }
 
                     do {
                         let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
                         return ProductSearchItem(
-                            name: product.name,
-                            brand: product.brand ?? dossier.product.brand,
-                            url: product.url,
+                            name: name,
+                            brand: brand ?? dossier.product.brand,
+                            url: url,
                             imageURL: dossier.product.imageURL,
-                            highlights: dossier.product.highlights
+                            highlights: highlights
                         )
                     } catch {
                         return product

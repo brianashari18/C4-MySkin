@@ -11,12 +11,12 @@ struct SkincareAPIClient {
     private let baseURL = URL(string: "https://skincare.krossmanzs.com")!
     private let session: URLSession
     private let decoder: JSONDecoder
-    private let apiKey: String
+    private let apiKey: ***
 
-    init(
+    nonisolated init(
         session: URLSession = .shared,
         decoder: JSONDecoder = JSONDecoder(),
-        apiKey: String? = nil
+        apiKey: *** = nil
     ) {
         self.session = session
         self.decoder = decoder
