@@ -11,8 +11,8 @@ import UIKit
 private enum OnboardingLayout {
     static let screenHorizontalPadding: CGFloat = 54
     static let bottomPadding: CGFloat = 72
-    static let bottomOffsetY: CGFloat = 34
-    static let bottomButtonWidth: CGFloat = 275
+    static let bottomOffsetY: CGFloat = 50
+    static let bottomButtonWidth: CGFloat = 350
     static let bottomButtonFontSize: CGFloat = 22
     static let bottomButtonHeight: CGFloat = 52
 }
@@ -99,9 +99,15 @@ private struct OnboardingConversationScreen: View {
 
             Spacer()
 
-            OnboardingMascotLottieView(animation: step.mascotAnimation ?? .idle)
-                .frame(width: 450, height: 450)
-                .scaleEffect(isMascotDroppingToQuiz ? 1.10 : 1)
+            ZStack(alignment: .bottom) {
+                OnboardingMascotShadow()
+                    .offset(y: 15)
+                    .offset(x: -5)
+
+                OnboardingMascotLottieView(animation: step.mascotAnimation ?? .idle)
+                    .frame(width: 450, height: 450)
+                    .scaleEffect(isMascotDroppingToQuiz ? 1.10 : 1)
+            }
                 .frame(maxWidth: .infinity)
                 .offset(y: isMascotDroppingToQuiz ? 300 : mascotOffsetY)
                 .animation(.easeInOut(duration: 0.22), value: step.rawValue)
@@ -178,6 +184,27 @@ private struct OnboardingBottomTapText: View {
             .font(.system(size: 16, weight: .semibold, design: .rounded))
             .foregroundStyle(OnboardingStyle.strongShadow.opacity(0.35))
             .frame(maxWidth: .infinity)
+    }
+}
+
+private struct OnboardingMascotShadow: View {
+    var body: some View {
+        Ellipse()
+            .fill(
+                RadialGradient(
+                    colors: [
+                        Color.black.opacity(0.22),
+                        Color.black.opacity(0.12),
+                        Color.black.opacity(0)
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 90
+                )
+            )
+            .frame(width: 250, height: 40)
+            .blur(radius: 2)
+            .allowsHitTesting(false)
     }
 }
 
@@ -403,32 +430,34 @@ private struct SkinSensitivityScreen: View {
     let onStart: () -> Void
 
     var body: some View {
-        VStack(spacing: 32) {
-            OnboardingTitleText(text: "Bagaimana sensitivitas\nkulit wajah kamu?", size: 20, alignment: .center)
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 32) {
+                OnboardingTitleText(text: "Bagaimana sensitivitas\nkulit wajah kamu?", size: 20, alignment: .center)
+                    .frame(maxWidth: .infinity)
+
+                VStack(spacing: 28) {
+                    ForEach(SkinSensitivity.allCases) { sensitivity in
+                        OnboardingOptionButton(
+                            title: sensitivity.rawValue,
+                            isSelected: selectedSensitivity == sensitivity,
+                            fontSize: 18,
+                            height: 44
+                        ) {
+                            onSelect(sensitivity)
+                        }
+                        .frame(maxWidth: 275)
+                    }
+                }
                 .frame(maxWidth: .infinity)
 
-            VStack(spacing: 28) {
-                ForEach(SkinSensitivity.allCases) { sensitivity in
-                    OnboardingOptionButton(
-                        title: sensitivity.rawValue,
-                        isSelected: selectedSensitivity == sensitivity,
-                        fontSize: 18,
-                        height: 44
-                    ) {
-                        onSelect(sensitivity)
-                    }
-                    .frame(maxWidth: 275)
-                }
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-
-            Spacer()
+            .padding(.horizontal, OnboardingLayout.screenHorizontalPadding)
+            .padding(.top, 100)
 
             OnboardingBottomCTA(title: "Selesai", isEnabled: selectedSensitivity != nil, action: onStart)
                 .offset(y: OnboardingLayout.bottomOffsetY)
         }
-        .padding(.horizontal, 56)
-        .padding(.top, 100)
         .padding(.bottom, OnboardingLayout.bottomPadding)
     }
 }
