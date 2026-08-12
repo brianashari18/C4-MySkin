@@ -35,6 +35,26 @@ enum SkinType: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     static let assessmentConfirmationCases: [SkinType] = [.dry, .normal, .oily, .combination]
+
+    var apiQueryValue: String? {
+        switch self {
+        case .dry: return "dry"
+        case .normal: return "normal"
+        case .oily: return "oily"
+        case .combination: return "combination"
+        case .notSureYet: return nil
+        }
+    }
+
+    static func apiValue(from rawValue: String?) -> String? {
+        guard let rawValue, !rawValue.isEmpty else { return nil }
+        let lower = rawValue.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if lower == "dry" || lower == "kering" { return "dry" }
+        if lower == "normal" { return "normal" }
+        if lower == "oily" || lower == "berminyak" { return "oily" }
+        if lower == "combination" || lower == "kombinasi" { return "combination" }
+        return nil
+    }
 }
 
 enum SkinSensitivity: String, CaseIterable, Identifiable {
@@ -45,6 +65,34 @@ enum SkinSensitivity: String, CaseIterable, Identifiable {
     case notSureYet = "Belum Yakin"
 
     var id: String { rawValue }
+
+    var apiQueryValue: String? {
+        switch self {
+        case .normalResistant: return "normal/resistant"
+        case .slightlySensitive: return "slightly sensitive"
+        case .sensitive: return "sensitive"
+        case .verySensitive: return "very sensitive"
+        case .notSureYet: return nil
+        }
+    }
+
+    static func apiValue(from rawValue: String?) -> String? {
+        guard let rawValue, !rawValue.isEmpty else { return nil }
+        let lower = rawValue.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if lower.contains("resistant") || lower == "normal / resistant" || lower == "normal/resistant" {
+            return "normal/resistant"
+        }
+        if lower.contains("agak") || lower == "slightly sensitive" {
+            return "slightly sensitive"
+        }
+        if lower.contains("sangat") || lower == "very sensitive" {
+            return "very sensitive"
+        }
+        if lower.contains("sensitif") || lower == "sensitive" {
+            return "sensitive"
+        }
+        return nil
+    }
 }
 
 enum MascotAnimation: String, CaseIterable {

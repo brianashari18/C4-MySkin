@@ -42,7 +42,7 @@ enum EnvironmentLoader {
 
     nonisolated private static func parse(contents: String, forKey key: String) -> String? {
         contents
-            .split(whereSeparator: \ .isNewline)
+            .split(whereSeparator: \.isNewline)
             .compactMap { rawLine -> (String, String)? in
                 let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !line.isEmpty, !line.hasPrefix("#"), let separator = line.firstIndex(of: "=") else {
@@ -50,7 +50,15 @@ enum EnvironmentLoader {
                 }
 
                 let parsedKey = String(line[..<separator]).trimmingCharacters(in: .whitespacesAndNewlines)
-                let parsedValue = String(line[line.index(after: separator)...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                var parsedValue = String(line[line.index(after: separator)...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                // Strip surrounding single or double quotes
+                if parsedValue.count >= 2 {
+                    let first = parsedValue.first!
+                    let last = parsedValue.last!
+                    if (first == "'" && last == "'") || (first == "\"" && last == "\"") {
+                        parsedValue = String(parsedValue.dropFirst().dropLast())
+                    }
+                }
                 return (parsedKey, parsedValue)
             }
             .first { $0.0 == key }?

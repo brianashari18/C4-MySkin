@@ -7,17 +7,20 @@ import SwiftUI
 
 struct SkinJournalMainView: View {
     let journey: SkincareJourney?
+    let userName: String
     let onSkinJournaling: () -> Void
     let onProductValidation: () -> Void
     let onProfile: () -> Void
 
     init(
         journey: SkincareJourney?,
+        userName: String = "POLO",
         onSkinJournaling: @escaping () -> Void,
         onProductValidation: @escaping () -> Void,
         onProfile: @escaping () -> Void = {}
     ) {
         self.journey = journey
+        self.userName = userName
         self.onSkinJournaling = onSkinJournaling
         self.onProductValidation = onProductValidation
         self.onProfile = onProfile
@@ -98,7 +101,7 @@ struct SkinJournalMainView: View {
                     .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 
-                Text("POLO")
+                Text(userName)
                     .font(.system(size: 26, weight: .bold))
                     .underline()
                     .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))

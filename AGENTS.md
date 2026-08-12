@@ -186,6 +186,12 @@ Catatan: `simctl terminate` itu SIGKILL → UserDefaults TIDAK ter-flush ke disk
 - 2026-08-11: Update header `JourneyMainView.swift` & membuat `SkinJournalCalendarView.swift`: (1) Menambahkan `CalendarButton` lingkaran 42x42 berisi SF Symbol `calendar` (tanpa teks) berdampingan dengan `HistoryButton` di kanan atas header `JourneyMainView`, dengan gaya stroke border 2pt persis sama seperti tombol `BackButton`; (2) Membuat layar kalender baru `SkinJournalCalendarView.swift` ("Journal Calendar") dengan grid hari 1..31 dan penanda bulat biru pada tanggal yang memiliki foto progress/jurnal; (3) Mengeklik tanggal berfoto di kalender akan men-direct pengguna ke `JourneyDetailView` dengan menyembunyikan progress bar atas (`hideProgressBar: true`), hanya menampilkan foto & detail jurnal hari itu. Build sukses.
 - 2026-08-12: Refactor feature Onboarding menjadi alur percakapan kontinu (`OnboardingConversationScreen`): step welcome/introduction/skincareHelp/getNamePrompt/personalizationIntro kini berbagi satu container dengan mascot sebagai visual anchor tetap; saat tap, top text dan bottom control fade/slide out, mascot tetap terlihat sambil animation pose berganti, lalu text/control baru fade/slide in. `OnboardingViewModel` menambahkan `isConversationContentVisible`, `advanceConversation()`, dan `submitNameWithConversationTransition()`. Build sukses.
 - 2026-08-12: Tambah transisi khusus dari onboarding quiz intro ke Skin Type: saat pengguna tap **"Mulai Kuis"**, text/button fade out, Lottie mascot idle yang sama tetap dirender lalu bergerak turun dan berubah frame/crop ke posisi bawah Skin Type sebelum screen Skin Type muncul. `OnboardingViewModel` menambahkan `isMascotDroppingToQuiz` dan delay transisi 0.42s khusus step `personalizationIntro -> skinType`. Build sukses.
+- 2026-08-12: Mengganti komponen badge `SpiralNameTagBadge` di `SkinProfileView.swift` dengan asset gambar baru `NameTagBadge` (`nametag_badge.png` di `Assets.xcassets`), dengan overlay teks nama pengguna ("POLO") di atas garis name tag dan mascot beranimasi (`MascotLottieView`) yang tetap berada di atasnya. Build sukses.
+- 2026-08-12: Menghubungkan foto di `SkinProfileView.swift` dengan foto terakhir dari jurnaling (`latestImageName` dari `latestJourney`): jika pengguna sudah mengambil foto jurnaling, bingkai profil otomatis menampilkan foto jurnaling terbaru (dengan fallback ke `FaceOutline` jika belum ada foto). Build sukses.
+
+
+
+
 
 
 

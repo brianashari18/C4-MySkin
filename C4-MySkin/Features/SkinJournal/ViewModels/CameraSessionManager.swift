@@ -11,10 +11,10 @@ import Observation
 final class CameraOutputProxy: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     static let shared = CameraOutputProxy()
 
-    nonisolated(unsafe) private let frameLock = NSLock()
+    private let frameLock = NSLock()
     nonisolated(unsafe) private var latestBuffer: CVPixelBuffer?
 
-    nonisolated(unsafe) private let handlerLock = NSLock()
+    private let handlerLock = NSLock()
     nonisolated(unsafe) private var frameHandler: ((CVPixelBuffer) -> Void)?
 
     nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {

@@ -12,10 +12,15 @@ import SwiftUI
 /// Popup menu: "Camera" → CameraScannerView | "Other…" → ProductSearchView
 struct ImagePickerView: View {
 
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ProductValidationViewModel
 
     // Controls the popup menu visibility
     @State private var showMenu: Bool = false
+
+    // Controls history sheets
+    @State private var showPickedProductSheet: Bool = false
+    @State private var showComparisonHistorySheet: Bool = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -27,16 +32,18 @@ struct ImagePickerView: View {
                 VStack {
                     // MARK: - Navigation Bar
                     HStack {
-                        Button {
-                            // Back action handled by parent / root coordinator
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
-                                .foregroundStyle(Color.App.textDark)
-                                .padding(10)
-                                .background(Circle().fill(Color.white.opacity(0.85)))
+                        BackButton {
+                            dismiss()
                         }
                         Spacer()
+                        HStack(spacing: 10) {
+                            PickedProductButton {
+                                showPickedProductSheet = true
+                            }
+                            ComparisonHistoryButton {
+                                showComparisonHistorySheet = true
+                            }
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
@@ -83,12 +90,17 @@ struct ImagePickerView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showMenu)
-        // Tap outside to dismiss
         .contentShape(Rectangle())
         .onTapGesture {
             if showMenu {
                 withAnimation { showMenu = false }
             }
+        }
+        .sheet(isPresented: $showPickedProductSheet) {
+            PickedProductHistoryView()
+        }
+        .sheet(isPresented: $showComparisonHistorySheet) {
+            ComparisonHistoryView()
         }
     }
 
@@ -139,6 +151,56 @@ struct ImagePickerView: View {
                 .shadow(color: Color.App.darkBlue.opacity(0.15), radius: 12, x: 0, y: 4)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+// MARK: - Action Buttons for Top Bar
+
+struct PickedProductButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
+            Image(systemName: "bookmark.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                .frame(width: 42, height: 42)
+                .background(
+                    Circle()
+                        .stroke(Color(red: 0.11, green: 0.27, blue: 0.42), lineWidth: 1.8)
+                        .background(Circle().fill(Color.white.opacity(0.9)))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Picked Product History")
+    }
+}
+
+struct ComparisonHistoryButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        }) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                .frame(width: 42, height: 42)
+                .background(
+                    Circle()
+                        .stroke(Color(red: 0.11, green: 0.27, blue: 0.42), lineWidth: 1.8)
+                        .background(Circle().fill(Color.white.opacity(0.9)))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Comparison History")
     }
 }
 

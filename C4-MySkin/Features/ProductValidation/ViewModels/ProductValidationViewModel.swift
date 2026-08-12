@@ -194,6 +194,30 @@ final class ProductValidationViewModel: ObservableObject {
         isSearching = false
     }
 
+    private func getProductDossierWithProfile(slug: String) async throws -> ProductDossierResponse {
+        let profile = AppDataService.shared.fetchOrCreateProfile()
+        let concernIDs = Set(profile.selectedConcernIDs)
+
+        // Map SkinConcernTag -> API concern categories
+        let acnePoreTags: Set<String> = ["Komedo hitam", "Komedo putih", "Jerawat merah", "Jerawat bernanah", "Jerawat dalam"]
+        let skinToneTags: Set<String> = ["Bekas jerawat gelap", "Kemerahan", "Flek", "Bercak coklat atau keabu-abuan"]
+        let sunDamageTags: Set<String> = ["Flek karena matahari", "Warna tidak merata"]
+
+        let concernAcnePore = concernIDs.intersection(acnePoreTags).isEmpty ? nil : "true"
+        let concernSkinTone = concernIDs.intersection(skinToneTags).isEmpty ? nil : "true"
+        let concernSunDamage = concernIDs.intersection(sunDamageTags).isEmpty ? nil : "true"
+
+        return try await apiClient.getProductDossier(
+            slug: slug,
+            enrich: true,
+            skinType: SkinType.apiValue(from: profile.skinTypeRaw),
+            skinSensitivity: SkinSensitivity.apiValue(from: profile.skinSensitivityRaw),
+            concernAcnePore: concernAcnePore,
+            concernSkinTone: concernSkinTone,
+            concernSunDamage: concernSunDamage
+        )
+    }
+
     private func fetchProducts(for query: String) async throws -> [ProductSearchItem] {
         let response = try await apiClient.searchProducts(query: query)
         return try await enrichProducts(response.results)
@@ -208,7 +232,7 @@ final class ProductValidationViewModel: ObservableObject {
                 let imageURL = product.imageURL
                 let highlights = product.highlights
                 let slug = product.slug
-                group.addTask { [apiClient] in
+                group.addTask {
                     // If search API already provided image_url, return immediately (fast cache path)
                     guard imageURL == nil else {
                         return product
@@ -219,7 +243,7 @@ final class ProductValidationViewModel: ObservableObject {
                     }
 
                     do {
-                        let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+                        let dossier = try await self.getProductDossierWithProfile(slug: slug)
                         return ProductSearchItem(
                             name: name,
                             brand: brand ?? dossier.product.brand,
@@ -257,7 +281,7 @@ final class ProductValidationViewModel: ObservableObject {
         searchErrorMessage = nil
 
         do {
-            let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+            let dossier = try await getProductDossierWithProfile(slug: slug)
             let result = ValidationResult(dossier: dossier)
 
             if validationResult == nil {
@@ -294,7 +318,7 @@ final class ProductValidationViewModel: ObservableObject {
         do {
             let resolveResponse = try await apiClient.resolveProduct(query: trimmed)
             if let resolvedProduct = resolveResponse.product, let slug = resolvedProduct.slug {
-                let dossier = try await apiClient.getProductDossier(slug: slug, enrich: true)
+                let dossier = try await getProductDossierWithProfile(slug: slug)
                 let result = ValidationResult(dossier: dossier)
 
                 if validationResult == nil {

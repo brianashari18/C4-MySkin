@@ -52,6 +52,11 @@ final class OnboardingViewModel {
 
     func finishOnboarding() {
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+        AppDataService.shared.updateOnboarding(
+            name: trimmedName,
+            skinType: personalization.skinType,
+            skinSensitivity: personalization.skinSensitivity
+        )
         currentStep = .mainPage
     }
 

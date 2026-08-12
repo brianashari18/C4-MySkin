@@ -16,7 +16,7 @@ enum HistoryTab: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Picked Product Item Model
-struct PickedProductItem: Identifiable, Hashable {
+struct PickedProductItem: Identifiable, Hashable, Codable {
     let id: UUID
     let name: String
     let brand: String
@@ -33,7 +33,7 @@ struct PickedProductItem: Identifiable, Hashable {
 }
 
 // MARK: - Comparison History Item Model
-struct ComparisonHistoryItem: Identifiable, Hashable {
+struct ComparisonHistoryItem: Identifiable, Hashable, Codable {
     let id: UUID
     let product1: PickedProductItem
     let product2: PickedProductItem

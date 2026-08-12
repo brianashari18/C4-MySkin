@@ -372,13 +372,11 @@ private struct HistoryButton: View {
         }) {
             HStack(spacing: 6) {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 15, weight: .bold))
-                Text("History")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
             }
             .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
             .padding(.horizontal, 14)
-            .frame(height: 42)
+            .frame(width: 42, height: 42)
             .background(
                 Capsule()
                     .stroke(Color(red: 0.11, green: 0.27, blue: 0.42), lineWidth: 2)

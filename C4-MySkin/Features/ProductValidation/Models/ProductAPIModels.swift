@@ -113,12 +113,40 @@ struct ProductDossierResponse: Decodable {
     let price: ProductPricePayload?
     let reviews: ProductReviewsPayload?
     let ingredientProfiles: [IngredientProfileSummary]
+    let brandReputation: BrandReputationPayload?
+    let concerns: [ProductConcernPayload]?
 
     enum CodingKeys: String, CodingKey {
         case product
         case price
         case reviews
         case ingredientProfiles = "ingredient_profiles"
+        case brandReputation = "brand_reputation"
+        case concerns
+    }
+}
+
+struct BrandReputationPayload: Decodable {
+    let brand: String?
+    let narrative: String?
+
+    enum CodingKeys: String, CodingKey {
+        case brand
+        case narrative
+    }
+}
+
+struct ProductConcernPayload: Decodable, Hashable {
+    let name: String
+    let severity: String?
+    let incidence: String?
+    let ingredients: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case severity
+        case incidence
+        case ingredients
     }
 }
 
