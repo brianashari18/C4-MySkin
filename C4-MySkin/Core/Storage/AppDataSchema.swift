@@ -22,6 +22,7 @@ final class UserProfile {
     @Relationship(deleteRule: .cascade) var productComparisons: [ProductComparison]? = []
     @Relationship(deleteRule: .cascade) var activeJourneys: [Journey]? = []
     @Relationship(deleteRule: .cascade) var completedJourneys: [CompletedJourney]? = []
+    @Relationship(deleteRule: .cascade) var trackedProducts: [TrackedProduct]? = []
 
     init(name: String = "", skinTypeRaw: String? = nil, skinSensitivityRaw: String? = nil) {
         self.name = name
@@ -61,6 +62,43 @@ final class ProductComparison {
         self.product2Name = product2Name
         self.product2Brand = product2Brand
         self.comparedAt = comparedAt
+    }
+}
+
+// MARK: - Tracked Product (Skin Journal)
+// A product the user chose to track in the skincare journal flow.
+// Distinct from `PickedProduct` (Product History) — that is a different use case.
+
+@Model
+final class TrackedProduct {
+    @Attribute(.unique) var id: UUID
+    var name: String
+    var brand: String
+    var category: String
+    var imageURL: String?
+    var slug: String?
+    var highlights: [String]
+    var chosenAt: Date
+
+    var profile: UserProfile?
+
+    init(
+        name: String,
+        brand: String,
+        category: String = "",
+        imageURL: String? = nil,
+        slug: String? = nil,
+        highlights: [String] = [],
+        chosenAt: Date = Date()
+    ) {
+        self.id = UUID()
+        self.name = name
+        self.brand = brand
+        self.category = category
+        self.imageURL = imageURL
+        self.slug = slug
+        self.highlights = highlights
+        self.chosenAt = chosenAt
     }
 }
 
