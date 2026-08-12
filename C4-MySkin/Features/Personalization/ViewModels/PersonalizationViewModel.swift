@@ -345,6 +345,7 @@ final class PersonalizationViewModel {
         profile.skinTypeRaw = selectedSkinType?.rawValue
         profile.skinSensitivityRaw = selectedSkinSensitivity?.rawValue
         profile.selectedConcernIDs = selectedConcerns.map(\.rawValue)
+        profile.hasCompletedPersonalization = true
         AppDataService.shared.saveProfile(profile)
     }
 
