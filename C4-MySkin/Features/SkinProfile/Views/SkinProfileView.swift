@@ -14,6 +14,7 @@ struct SkinProfileView: View {
     let skinType: String
     let sensitivity: String
     let skinConcern: String
+    let latestImageName: String?
     let onRetakeTest: () -> Void
 
     init(
@@ -21,12 +22,14 @@ struct SkinProfileView: View {
         skinType: String = "Dry",
         sensitivity: String = "Moderate",
         skinConcern: String = "_",
+        latestImageName: String? = nil,
         onRetakeTest: @escaping () -> Void = {}
     ) {
         self.userName = userName
         self.skinType = skinType
         self.sensitivity = sensitivity
         self.skinConcern = skinConcern
+        self.latestImageName = latestImageName
         self.onRetakeTest = onRetakeTest
     }
 
@@ -52,7 +55,6 @@ struct SkinProfileView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 50)
 
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 28) {
@@ -63,14 +65,25 @@ struct SkinProfileView: View {
                             .padding(.top, 16)
 
                         // Center Face Frame Card with "POLO" Tag Badge Overlay
-                        ZStack(alignment: .bottomTrailing) {
+                        ZStack(alignment: .bottom) {
                             // Face Card Frame
                             RoundedRectangle(cornerRadius: 24)
                                 .fill(Color.white)
                                 .frame(width: 290, height: 290)
                                 .overlay(
-                                    FaceOutline()
-                                        .padding(24)
+                                    Group {
+                                        if let latestImageName, !latestImageName.isEmpty,
+                                           let uiImage = CameraViewModel.loadImage(named: latestImageName) {
+                                            Image(uiImage: uiImage)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 290, height: 290)
+                                                .clipShape(RoundedRectangle(cornerRadius: 24))
+                                        } else {
+                                            FaceOutline()
+                                                .padding(24)
+                                        }
+                                    }
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 24)
@@ -80,14 +93,15 @@ struct SkinProfileView: View {
 
                             // Yellow Spiral Name Tag Badge with Mascot
                             ZStack(alignment: .topTrailing) {
-                                SpiralNameTagBadge(name: userName)
-
-                                // Mascot Graphic Overlay
+                                
                                 MascotLottieView(width: 95)
                                     .accessibilityHidden(true)
-                                    .offset(x: 18, y: -22)
+                                    .offset(x: 130, y: -5)
+                                    .rotationEffect(.degrees(15))
+                                
+                                SpiralNameTagBadge(name: userName)
                             }
-                            .offset(x: 20, y: 28)
+                            .offset(y: 20)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.top, 8)
@@ -157,41 +171,24 @@ struct SkinProfileView: View {
     }
 }
 
-// MARK: - Yellow Spiral Name Tag Badge Component
+// MARK: - Yellow Name Tag Badge Component
 private struct SpiralNameTagBadge: View {
     let name: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Spiral Binder Rings
-            VStack(spacing: 6) {
-                Circle().fill(Color(red: 0.55, green: 0.42, blue: 0.22)).frame(width: 7, height: 7)
-                Circle().fill(Color(red: 0.55, green: 0.42, blue: 0.22)).frame(width: 7, height: 7)
-                Circle().fill(Color(red: 0.55, green: 0.42, blue: 0.22)).frame(width: 7, height: 7)
-            }
-            .padding(.leading, 6)
+        ZStack {
+            Image("NameTagBadge")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 180)
+                .offset(x: 20, y: 50)
 
-            VStack(spacing: 4) {
-                Text(name)
-                    .font(.system(size: 22, weight: .black))
-                    .foregroundStyle(Color.black)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-
-                Rectangle()
-                    .fill(Color(red: 0.78, green: 0.65, blue: 0.38).opacity(0.6))
-                    .frame(height: 3)
-                    .padding(.horizontal, 10)
-            }
+            Text(name)
+                .font(.system(size: 20, weight: .black))
+                .foregroundStyle(Color(red: 0.15, green: 0.20, blue: 0.30))
+                .offset(x: 30, y: 40)
+                .rotationEffect(.degrees(15))
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(red: 0.99, green: 0.90, blue: 0.66))
-                .shadow(color: Color.black.opacity(0.12), radius: 6, x: 2, y: 3)
-        )
-        .rotationEffect(.degrees(12))
     }
 }
 
