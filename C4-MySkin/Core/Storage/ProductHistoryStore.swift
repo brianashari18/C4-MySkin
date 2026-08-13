@@ -53,7 +53,20 @@ final class ProductHistoryStore: ObservableObject {
     }
 
     // MARK: - Save Comparison Item
+    func isComparisonSaved(product1: PickedProductItem, product2: PickedProductItem) -> Bool {
+        comparisonHistory.contains { item in
+            (item.product1.name == product1.name && item.product1.brand == product1.brand &&
+             item.product2.name == product2.name && item.product2.brand == product2.brand) ||
+            (item.product1.name == product2.name && item.product1.brand == product2.brand &&
+             item.product2.name == product1.name && item.product2.brand == product1.brand)
+        }
+    }
+
     func saveComparison(product1: PickedProductItem, product2: PickedProductItem) {
+        // Prevent duplicate comparison entries
+        if isComparisonSaved(product1: product1, product2: product2) {
+            return
+        }
         let item = ComparisonHistoryItem(product1: product1, product2: product2)
         comparisonHistory.insert(item, at: 0)
         persistComparisonHistory()

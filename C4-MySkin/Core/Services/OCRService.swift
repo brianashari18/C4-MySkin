@@ -28,6 +28,15 @@ struct OCRService {
                 }
 
                 let fullText = recognizedStrings.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                print("--------------------------------------------------")
+                print("📷 [Vision OCR] Detected \(recognizedStrings.count) lines of text:")
+                for (index, line) in recognizedStrings.enumerated() {
+                    print("   [\(index + 1)] \(line)")
+                }
+                print("📝 [Vision OCR Combined Text]: \"\(fullText)\"")
+                print("--------------------------------------------------")
+
                 continuation.resume(returning: fullText.isEmpty ? nil : fullText)
             }
 

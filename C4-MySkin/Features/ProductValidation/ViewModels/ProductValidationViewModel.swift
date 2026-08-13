@@ -136,8 +136,11 @@ final class ProductValidationViewModel: ObservableObject {
 
         Task {
             if let recognizedText = await OCRService.extractText(from: image) {
+                print("🚀 Sending OCR text query to GET /api/products/resolve...")
+                print("   Query Payload: \"\(recognizedText)\"")
                 await resolveProductFromText(query: recognizedText)
             } else {
+                print("❌ [OCR] No text recognized from captured photo.")
                 isLoading = false
                 currentStep = .review
                 showProductNotFoundModal = true
@@ -292,6 +295,8 @@ final class ProductValidationViewModel: ObservableObject {
         do {
             let dossier = try await getProductDossierWithProfile(slug: slug)
             let result = ValidationResult(dossier: dossier)
+            let cacheKey = "\(result.brand) \(result.productName)"
+            ValidationResultCache.shared.set(result, forKey: cacheKey)
 
             if validationResult == nil {
                 firstProductSource = .search
@@ -334,6 +339,9 @@ final class ProductValidationViewModel: ObservableObject {
                 let dossier = try await getProductDossierWithProfile(slug: slug)
                 let result = ValidationResult(dossier: dossier)
 
+                let cacheKey = "\(result.brand) \(result.productName)"
+                ValidationResultCache.shared.set(result, forKey: cacheKey)
+
                 if validationResult == nil {
                     firstProductSource = .camera
                     firstSelectedImage = selectedImage
@@ -353,6 +361,86 @@ final class ProductValidationViewModel: ObservableObject {
         } catch {
             currentStep = .review
             showProductNotFoundModal = true
+        }
+    }
+
+    // MARK: - History Item Navigation
+
+    func loadPickedProduct(_ item: PickedProductItem) async {
+        let key = "\(item.brand) \(item.name)"
+
+        // Instant render from memory cache if available
+        if let cached = ValidationResultCache.shared.get(key) {
+            validationResult = cached
+            secondValidationResult = nil
+            currentStep = .result
+            return
+        }
+
+        isLoading = true
+        currentStep = .loading
+        validationResult = nil
+        secondValidationResult = nil
+
+        let query = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        await resolveProductFromText(query: query)
+    }
+
+    func loadComparisonHistory(_ item: ComparisonHistoryItem) async {
+        let key1 = "\(item.product1.brand) \(item.product1.name)"
+        let key2 = "\(item.product2.brand) \(item.product2.name)"
+
+        let cached1 = ValidationResultCache.shared.get(key1)
+        let cached2 = ValidationResultCache.shared.get(key2)
+
+        // Instant render if both items are in memory cache
+        if let cached1, let cached2 {
+            firstProductSource = .search
+            secondProductSource = .search
+            validationResult = cached1
+            secondValidationResult = cached2
+            currentStep = .result
+            return
+        }
+
+        isLoading = true
+        currentStep = .loading
+        validationResult = nil
+        secondValidationResult = nil
+
+        let q1 = key1.trimmingCharacters(in: .whitespacesAndNewlines)
+        let q2 = key2.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        do {
+            if let cached1 {
+                validationResult = cached1
+            } else {
+                let r1 = try await apiClient.resolveProduct(query: q1)
+                if let p1 = r1.product, let slug1 = p1.slug {
+                    let dossier1 = try await getProductDossierWithProfile(slug: slug1)
+                    let res1 = ValidationResult(dossier: dossier1)
+                    ValidationResultCache.shared.set(res1, forKey: key1)
+                    validationResult = res1
+                }
+            }
+
+            if let cached2 {
+                secondValidationResult = cached2
+            } else {
+                let r2 = try await apiClient.resolveProduct(query: q2)
+                if let p2 = r2.product, let slug2 = p2.slug {
+                    let dossier2 = try await getProductDossierWithProfile(slug: slug2)
+                    let res2 = ValidationResult(dossier: dossier2)
+                    ValidationResultCache.shared.set(res2, forKey: key2)
+                    secondValidationResult = res2
+                }
+            }
+
+            firstProductSource = .search
+            secondProductSource = .search
+            currentStep = .result
+        } catch {
+            currentStep = .comparisonHistory
         }
 
         isLoading = false

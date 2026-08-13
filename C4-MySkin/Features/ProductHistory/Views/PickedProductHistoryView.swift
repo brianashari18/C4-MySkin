@@ -13,6 +13,7 @@ struct PickedProductHistoryView: View {
     @StateObject private var viewModel = ProductHistoryViewModel()
     @Environment(\.dismiss) private var dismiss
     var onBack: (() -> Void)? = nil
+    var onSelectProduct: ((PickedProductItem) -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -71,7 +72,12 @@ struct PickedProductHistoryView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 14) {
                             ForEach(viewModel.pickedProducts) { item in
-                                PickedProductCardView(item: item)
+                                Button {
+                                    onSelectProduct?(item)
+                                } label: {
+                                    PickedProductCardView(item: item)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, 24)

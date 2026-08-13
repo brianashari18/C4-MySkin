@@ -138,14 +138,10 @@ struct ValidationResultView: View {
                     if viewModel.isComparisonMode,
                        let first = viewModel.validationResult,
                        let second = viewModel.secondValidationResult {
-                        // Mode Comparison: Simpan ke comparison history & balik ke home
+                        // Mode Comparison: Simpan ke comparison history
                         let p1 = PickedProductItem(name: first.productName, brand: first.brand, imageURL: first.imageURL)
                         let p2 = PickedProductItem(name: second.productName, brand: second.brand, imageURL: second.imageURL)
                         ProductHistoryStore.shared.saveComparison(product1: p1, product2: p2)
-                    } else if let result = viewModel.validationResult {
-                        // Mode Single Product: Simpan ke picked product & balik ke home
-                        let item = PickedProductItem(name: result.productName, brand: result.brand, imageURL: result.imageURL)
-                        ProductHistoryStore.shared.savePickedProduct(item)
                     }
 
                     viewModel.finish()

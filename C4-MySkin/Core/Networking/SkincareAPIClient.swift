@@ -7,34 +7,89 @@
 
 import Foundation
 
+final class CacheBox<T>: NSObject {
+    let value: T
+    init(_ value: T) { self.value = value }
+}
+
+final class APIMemoryCache: @unchecked Sendable {
+    static let shared = APIMemoryCache()
+    private let cache = NSCache<NSString, AnyObject>()
+    private let lock = NSLock()
+
+    func get<T>(_ key: String) -> T? {
+        lock.lock()
+        defer { lock.unlock() }
+        let box = cache.object(forKey: key as NSString) as? CacheBox<T>
+        return box?.value
+    }
+
+    func set<T>(_ value: T, forKey key: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        cache.setObject(CacheBox(value), forKey: key as NSString)
+    }
+}
+
 struct SkincareAPIClient {
     private let baseURL = URL(string: "https://skincare.krossmanzs.com")!
     private let session: URLSession
     private let decoder: JSONDecoder
     private let apiKey: String
 
+    private static let sharedSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.urlCache = URLCache(
+            memoryCapacity: 50 * 1024 * 1024,
+            diskCapacity: 100 * 1024 * 1024,
+            diskPath: "skincare_api_cache"
+        )
+        config.requestCachePolicy = .useProtocolCachePolicy
+        config.httpMaximumConnectionsPerHost = 12
+        config.timeoutIntervalForRequest = 10
+        return URLSession(configuration: config)
+    }()
+
     nonisolated init(
-        session: URLSession = .shared,
+        session: URLSession? = nil,
         decoder: JSONDecoder = JSONDecoder(),
         apiKey: String? = nil
     ) {
-        self.session = session
+        self.session = session ?? Self.sharedSession
         self.decoder = decoder
         self.apiKey = apiKey ?? EnvironmentLoader.value(forKey: "API_KEY") ?? ""
     }
 
     func searchProducts(query: String) async throws -> ProductSearchResponse {
-        try await request(
+        let cleanQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let cacheKey = "search_\(cleanQuery)"
+
+        if let cached: ProductSearchResponse = APIMemoryCache.shared.get(cacheKey) {
+            return cached
+        }
+
+        let response: ProductSearchResponse = try await request(
             path: "/api/products/search",
             queryItems: [URLQueryItem(name: "query", value: query)]
         )
+        APIMemoryCache.shared.set(response, forKey: cacheKey)
+        return response
     }
 
     func resolveProduct(query: String) async throws -> ProductResolveResponse {
-        try await request(
+        let cleanQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let cacheKey = "resolve_\(cleanQuery)"
+
+        if let cached: ProductResolveResponse = APIMemoryCache.shared.get(cacheKey) {
+            return cached
+        }
+
+        let response: ProductResolveResponse = try await request(
             path: "/api/products/resolve",
             queryItems: [URLQueryItem(name: "query", value: query)]
         )
+        APIMemoryCache.shared.set(response, forKey: cacheKey)
+        return response
     }
 
     func getProductDossier(
@@ -46,6 +101,12 @@ struct SkincareAPIClient {
         concernSkinTone: String? = nil,
         concernSunDamage: String? = nil
     ) async throws -> ProductDossierResponse {
+        let cacheKey = "dossier_\(slug)_\(enrich)_\(skinType ?? "")_\(skinSensitivity ?? "")_\(concernAcnePore ?? "")_\(concernSkinTone ?? "")_\(concernSunDamage ?? "")"
+
+        if let cached: ProductDossierResponse = APIMemoryCache.shared.get(cacheKey) {
+            return cached
+        }
+
         var queryItems = [URLQueryItem(name: "enrich", value: String(enrich))]
         if let skinType { queryItems.append(URLQueryItem(name: "skin_type", value: skinType)) }
         if let skinSensitivity { queryItems.append(URLQueryItem(name: "skin_sensitivity", value: skinSensitivity)) }
@@ -53,21 +114,40 @@ struct SkincareAPIClient {
         if let concernSkinTone { queryItems.append(URLQueryItem(name: "concern_skin_tone", value: concernSkinTone)) }
         if let concernSunDamage { queryItems.append(URLQueryItem(name: "concern_sun_damage", value: concernSunDamage)) }
 
-        return try await request(
+        let response: ProductDossierResponse = try await request(
             path: "/api/products/\(slug)",
             queryItems: queryItems
         )
+        APIMemoryCache.shared.set(response, forKey: cacheKey)
+        return response
     }
 
     func searchIngredients(query: String) async throws -> IngredientSearchResponse {
-        try await request(
+        let cleanQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let cacheKey = "ing_search_\(cleanQuery)"
+
+        if let cached: IngredientSearchResponse = APIMemoryCache.shared.get(cacheKey) {
+            return cached
+        }
+
+        let response: IngredientSearchResponse = try await request(
             path: "/api/ingredients/search",
             queryItems: [URLQueryItem(name: "query", value: query)]
         )
+        APIMemoryCache.shared.set(response, forKey: cacheKey)
+        return response
     }
 
     func getIngredient(slug: String) async throws -> IngredientDetailResponse {
-        try await request(path: "/api/ingredients/\(slug)")
+        let cacheKey = "ingredient_\(slug)"
+
+        if let cached: IngredientDetailResponse = APIMemoryCache.shared.get(cacheKey) {
+            return cached
+        }
+
+        let response: IngredientDetailResponse = try await request(path: "/api/ingredients/\(slug)")
+        APIMemoryCache.shared.set(response, forKey: cacheKey)
+        return response
     }
 
     private func request<T: Decodable>(

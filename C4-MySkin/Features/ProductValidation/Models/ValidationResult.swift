@@ -7,6 +7,28 @@
 
 import Foundation
 
+// MARK: - Validation Result Memory Cache
+final class ValidationResultCache: @unchecked Sendable {
+    static let shared = ValidationResultCache()
+    private let cache = NSCache<NSString, AnyObject>()
+    private let lock = NSLock()
+
+    func get(_ key: String) -> ValidationResult? {
+        lock.lock()
+        defer { lock.unlock() }
+        let cleanKey = key.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let box = cache.object(forKey: cleanKey as NSString) as? CacheBox<ValidationResult>
+        return box?.value
+    }
+
+    func set(_ value: ValidationResult, forKey key: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        let cleanKey = key.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        cache.setObject(CacheBox(value), forKey: cleanKey as NSString)
+    }
+}
+
 // MARK: - Validation Step Enum
 enum ValidationStep {
     case imagePicker
