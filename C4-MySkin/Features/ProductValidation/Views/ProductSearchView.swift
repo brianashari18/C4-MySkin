@@ -26,18 +26,12 @@ struct ProductSearchView: View {
             VStack(spacing: 0) {
                 // MARK: - Navigation Bar
                 HStack {
-                    Button {
+                    BackButton {
                         viewModel.leaveSearch()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(Font.App.nunitoRounded(size: 18, weight: .semibold))
-                            .foregroundStyle(Color.App.textDark)
-                            .padding(10)
-                            .background(Circle().fill(Color.white.opacity(0.85)))
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
 

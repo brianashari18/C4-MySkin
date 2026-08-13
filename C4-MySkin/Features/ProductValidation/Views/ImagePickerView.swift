@@ -46,6 +46,21 @@ struct ImagePickerView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 8)
 
+                // MARK: - Header Titles
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Analyze Product")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+
+                    Text("Scan or upload a product to check its ingredients and safety profile.")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Color(red: 0.35, green: 0.58, blue: 0.85))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+
                 Spacer(minLength: 16)
 
                 // MARK: - Large Camera Placeholder Card
@@ -58,12 +73,18 @@ struct ImagePickerView: View {
                         RoundedRectangle(cornerRadius: 32)
                             .fill(Color(red: 0.84, green: 0.84, blue: 0.85))
 
-                        Image(systemName: "camera")
-                            .font(.system(size: 48, weight: .regular))
-                            .foregroundStyle(Color(red: 0.15, green: 0.20, blue: 0.25))
+                        VStack(spacing: 12) {
+                            Image(systemName: "camera")
+                                .font(.system(size: 48, weight: .regular))
+                                .foregroundStyle(Color(red: 0.15, green: 0.20, blue: 0.25))
+
+                            Text("Take a photo of product")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Color(red: 0.25, green: 0.30, blue: 0.35))
+                        }
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 410)
+                    .frame(height: 380)
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 24)
