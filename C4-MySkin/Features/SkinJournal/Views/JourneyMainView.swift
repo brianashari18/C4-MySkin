@@ -433,15 +433,19 @@ private struct UpcomingMilestoneCard: View {
                     ForEach(0..<nodeCount, id: \.self) { index in
                         VStack(spacing: 5) {
                             if index == 0 {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color(red: 0.56, green: 0.58, blue: 0.61))
-                                    Image(systemName: "jar.fill")
-                                        .font(.system(size: 17))
-                                        .foregroundStyle(.white)
-                                }
-                                .frame(width: 40, height: 40)
-                            } else {
+                                                            ZStack {
+                                                                Circle()
+                                                                    .fill(Color(red: 0.56, green: 0.58, blue: 0.61))
+                                                                Image("MilestoneBottle")
+                                                                    .resizable()
+                                                                    .renderingMode(.template)
+                                                                    .scaledToFit()
+                                                                    .foregroundStyle(.white)
+                                                                    .frame(width: 32, height: 34)
+                                                                    .transformEffect(CGAffineTransform(translationX: 0, y: 4))
+                                                            }
+                                                            .frame(width: 40, height: 40)
+                                                        } else {
                                 Image(systemName: "flag.fill")
                                     .font(.system(size: 23))
                                     .foregroundStyle(Color(red: 0.56, green: 0.58, blue: 0.61))

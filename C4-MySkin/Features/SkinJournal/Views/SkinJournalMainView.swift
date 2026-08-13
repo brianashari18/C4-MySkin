@@ -294,15 +294,19 @@ struct ActiveMilestoneCard: View {
                     // Left: Circle Jar Icon + Start Date
                     VStack(spacing: 4) {
                         ZStack {
-                            Circle()
-                                .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
-                                .frame(width: 40, height: 40)
-                                .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
+                                                    Circle()
+                                                        .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
+                                                        .frame(width: 40, height: 40)
+                                                        .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
 
-                            Image(systemName: journey.product.iconName ?? "jar.fill")
-                                .font(.system(size: 19))
-                                .foregroundStyle(Color.white)
-                        }
+                                                    Image("MilestoneBottle")
+                                                        .resizable()
+                                                        .renderingMode(.template)
+                                                        .scaledToFit()
+                                                        .foregroundStyle(Color.white)
+                                                        .frame(width: 32, height: 34)
+                                                        .transformEffect(CGAffineTransform(translationX: 0, y: 4))
+                                                }
 
                         VStack(spacing: 1) {
                             Text("Start")
