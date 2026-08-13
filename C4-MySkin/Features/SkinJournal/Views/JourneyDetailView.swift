@@ -115,7 +115,7 @@ struct JourneyDetailView: View {
                             }
                             .disabled(selectedIndex <= 0)
 
-                            // Center Captured Photo Frame with Date Pill Overlay
+                            // Center Captured Photo Frame with Date Pill Overlay & Product Name
                             ZStack(alignment: .bottomTrailing) {
                                 if let photoName = currentPhotoName,
                                    let uiImage = CameraViewModel.loadImage(named: photoName) {
@@ -133,6 +133,14 @@ struct JourneyDetailView: View {
                                         )
                                         .frame(width: 250, height: 250)
                                 }
+
+                                // Product Name Overlay at Top Left
+                                Text(journey.product.name)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Color.white)
+                                    .shadow(color: Color.black.opacity(0.6), radius: 3, x: 0, y: 1)
+                                    .padding(14)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                                 // Date Pill Overlay at Bottom Right
                                 Text(formattedDate(currentEntry.date))
@@ -333,120 +341,195 @@ private struct YellowRuledPaperReadOnlyBox: View {
     }
 }
 
-// MARK: - Journal Timeline Header Component (Interaktif per Flag)
+// MARK: - Journal Timeline Header Component (Carousel Indicator Index-Mapped Dashed Line)
 private struct JournalTimelineHeader: View {
     let milestoneNumber: Int
     let totalEntries: Int
     @Binding var selectedIndex: Int
 
-    private var nodeCount: Int {
-        milestoneNumber == 2 ? 5 : max(2, min(5, totalEntries))
-    }
-
-    private var progressRatio: Double {
-        guard nodeCount > 1 else { return 0 }
-        let current = min(selectedIndex, nodeCount - 1)
-        return Double(current) / Double(nodeCount - 1)
-    }
-
     var body: some View {
-        VStack(spacing: 4) {
-            ZStack {
-                // Background Progress Bar Slider Track
-                GeometryReader { geometry in
-                    let totalWidth = geometry.size.width
-                    let fillWidth = totalWidth * progressRatio
+        HStack(alignment: .center, spacing: 8) {
+            if milestoneNumber == 1 {
+                // Milestone #1: 14 Total Carousel Items (Index 0 = Bottle, Indices 1..12 = 12 Dashes, Index 13 = Flag)
+                let dashCount = 12
 
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.20))
-                            .frame(height: 6)
-
-                        Capsule()
-                            .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
-                            .frame(width: max(0, fillWidth), height: 6)
-
-                        ZStack {
-                            Circle()
-                                .fill(Color(red: 0.16, green: 0.35, blue: 0.54))
-                                .frame(width: 14, height: 14)
-
-                            Circle()
-                                .stroke(Color(red: 0.38, green: 0.61, blue: 0.93).opacity(0.6), lineWidth: 3)
-                                .frame(width: 20, height: 20)
-                        }
-                        .offset(x: max(0, min(totalWidth - 10, fillWidth - 10)))
-                    }
-                    .frame(width: totalWidth, height: 40, alignment: .center)
+                // 1. Bottle Node (Carousel Index 0)
+                Button {
+                    selectNode(0)
+                } label: {
+                    CircleNodeIconView(
+                        iconName: "jar.fill",
+                        isBottle: true,
+                        isSelected: selectedIndex == 0,
+                        isReached: totalEntries > 0
+                    )
                 }
-                .padding(.horizontal, 16)
+                .buttonStyle(.plain)
 
-                // Timeline Icon Nodes (Clickable Flag Buttons)
-                HStack {
-                    ForEach(0..<nodeCount, id: \.self) { nodeIndex in
-                        let iconName = nodeIndex == 0 ? "jar.fill" : "flag.fill"
-                        let isSelected = nodeIndex == selectedIndex
-                        let isAvailable = nodeIndex < totalEntries
+                // 2. Middle 12 Dashes (Carousel Indices 1 to 12)
+                HStack(spacing: 3) {
+                    ForEach(0..<dashCount, id: \.self) { dashIdx in
+                        let itemIndex = dashIdx + 1
+                        let isSelected = selectedIndex == itemIndex
+                        let isReached = itemIndex < totalEntries
+                        let isAvailable = itemIndex < totalEntries
 
-                        Button(action: {
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-                            let targetIndex = min(nodeIndex, max(0, totalEntries - 1))
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                selectedIndex = targetIndex
-                            }
-                        }) {
-                            CircleIconNode(
-                                iconName: iconName,
-                                isSelected: isSelected,
-                                isAvailable: isAvailable
-                            )
+                        Button {
+                            selectNode(itemIndex)
+                        } label: {
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(
+                                    isSelected
+                                        ? Color(red: 0.16, green: 0.35, blue: 0.54) // Darkest Blue Highlighted
+                                        : (isReached
+                                            ? Color(red: 0.22, green: 0.43, blue: 0.65) // Dark Blue Active Reached
+                                            : Color(red: 0.74, green: 0.88, blue: 0.98)) // Light Ice Blue Inactive
+                                )
+                                .frame(height: isSelected ? 7 : 5)
                         }
                         .buttonStyle(.plain)
-
-                        if nodeIndex < nodeCount - 1 {
-                            Spacer()
-                        }
+                        .disabled(!isAvailable && !isSelected)
                     }
                 }
-                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity)
+
+                // 3. Flag Node (Carousel Index 13)
+                Button {
+                    selectNode(13)
+                } label: {
+                    FlagNodeIconView(
+                        isSelected: selectedIndex == 13,
+                        isReached: totalEntries >= 14
+                    )
+                }
+                .buttonStyle(.plain)
+
+            } else {
+                // Milestone #2: 5 Checkpoint Nodes (Indices 0, 3, 6, 9, 12) with 2 Dashes between each
+                ForEach(0..<5, id: \.self) { nodeIdx in
+                    let checkpointItemIndex = nodeIdx * 3
+                    let isSelected = selectedIndex == checkpointItemIndex
+                    let isReached = totalEntries > checkpointItemIndex
+
+                    Button {
+                        selectNode(checkpointItemIndex)
+                    } label: {
+                        if nodeIdx == 0 {
+                            CircleNodeIconView(
+                                iconName: "jar.fill",
+                                isBottle: true,
+                                isSelected: isSelected,
+                                isReached: isReached
+                            )
+                        } else {
+                            FlagNodeIconView(
+                                isSelected: isSelected,
+                                isReached: isReached
+                            )
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    if nodeIdx < 4 {
+                        // 2 connector dashes between checkpoint nodes
+                        HStack(spacing: 2) {
+                            ForEach(1...2, id: \.self) { dashOffset in
+                                let dashItemIndex = checkpointItemIndex + dashOffset
+                                let isDashSelected = selectedIndex == dashItemIndex
+                                let isDashReached = dashItemIndex < totalEntries
+                                let isDashAvailable = dashItemIndex < totalEntries
+
+                                Button {
+                                    selectNode(dashItemIndex)
+                                } label: {
+                                    RoundedRectangle(cornerRadius: 1.5)
+                                        .fill(
+                                            isDashSelected
+                                                ? Color(red: 0.16, green: 0.35, blue: 0.54)
+                                                : (isDashReached
+                                                    ? Color(red: 0.22, green: 0.43, blue: 0.65)
+                                                    : Color(red: 0.74, green: 0.88, blue: 0.98))
+                                        )
+                                        .frame(height: isDashSelected ? 7 : 5)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!isDashAvailable && !isDashSelected)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
             }
-            .frame(height: 40)
         }
+        .frame(height: 38)
         .padding(.horizontal, 24)
+    }
+
+    private func selectNode(_ index: Int) {
+        guard index < totalEntries else { return }
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        withAnimation(.easeInOut(duration: 0.25)) {
+            selectedIndex = index
+        }
     }
 }
 
-private struct CircleIconNode: View {
+private struct CircleNodeIconView: View {
     let iconName: String
+    let isBottle: Bool
     let isSelected: Bool
-    let isAvailable: Bool
+    let isReached: Bool
 
     var body: some View {
         ZStack {
             Circle()
                 .fill(
-                    isSelected
-                        ? Color(red: 0.16, green: 0.35, blue: 0.54)
-                        : (isAvailable ? Color(red: 0.74, green: 0.83, blue: 0.93) : Color(red: 0.88, green: 0.90, blue: 0.93))
+                    isReached || isSelected
+                        ? Color(red: 0.22, green: 0.43, blue: 0.65)
+                        : Color(red: 0.74, green: 0.88, blue: 0.98)
                 )
-                .frame(width: isSelected ? 36 : 30, height: isSelected ? 36 : 30)
-
-            if isSelected {
-                Circle()
-                    .stroke(Color(red: 0.38, green: 0.61, blue: 0.93), lineWidth: 2.5)
-                    .frame(width: 42, height: 42)
-            }
+                .frame(width: isSelected ? 36 : 32, height: isSelected ? 36 : 32)
+                .shadow(
+                    color: isSelected ? Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.35) : Color.clear,
+                    radius: 5, x: 0, y: 2
+                )
 
             Image(systemName: iconName)
                 .font(.system(size: isSelected ? 15 : 13, weight: .bold))
-                .foregroundStyle(
-                    isSelected
-                        ? Color.white
-                        : (isAvailable ? Color(red: 0.16, green: 0.35, blue: 0.54) : Color(red: 0.60, green: 0.68, blue: 0.76))
-                )
+                .foregroundStyle(Color.white)
         }
-        .frame(width: 42, height: 42)
+        .frame(width: 36, height: 36)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct FlagNodeIconView: View {
+    let isSelected: Bool
+    let isReached: Bool
+
+    var body: some View {
+        ZStack {
+            if isSelected {
+                Circle()
+                    .fill(Color(red: 0.22, green: 0.43, blue: 0.65))
+                    .frame(width: 36, height: 36)
+                    .shadow(color: Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.35), radius: 5, x: 0, y: 2)
+
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color(red: 0.82, green: 0.91, blue: 0.99))
+            } else {
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(
+                        isReached
+                            ? Color(red: 0.22, green: 0.43, blue: 0.65)
+                            : Color(red: 0.74, green: 0.88, blue: 0.98)
+                    )
+            }
+        }
+        .frame(width: 36, height: 36)
         .contentShape(Rectangle())
     }
 }
