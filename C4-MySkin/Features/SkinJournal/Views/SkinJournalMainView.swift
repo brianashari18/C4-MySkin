@@ -14,7 +14,6 @@ struct SkinJournalMainView: View {
         "Hyaluronic Acid helps attract and retain moisture in the skin.",
         "Salicylic Acid can help remove excess oil and buildup from pores.",
         "The same ingredient can work differently depending on its concentration and formulation.",
-        "Consistency is usually more important than having a lot of products.",
         "Centella Asiatica is often used to help soothe the skin.",
         "Don’t forget, your skin can change over time."
     ]
@@ -58,7 +57,7 @@ struct SkinJournalMainView: View {
                 Spacer()
                 MascotLottieView(width: 600)
                     .accessibilityHidden(true)
-                    .offset(y: 230) // downward crop for dramatic effect
+                    .offset(y: 180) // downward crop for dramatic effect
                     .offset(x: -4) // downward crop for dramatic effect
             }
             .ignoresSafeArea(edges: .bottom)
@@ -69,8 +68,8 @@ struct SkinJournalMainView: View {
                     .padding(.top, 10
                     )
 
-                searchPrompt
-                    .padding(.top, 16)
+//                searchPrompt
+//                    .padding(.top, 16)
 
                 if let journey = journey {
                     Button(action: {
@@ -108,7 +107,7 @@ struct SkinJournalMainView: View {
                     .transition(.opacity)
                 }
                 .padding(.trailing, 24)
-                .padding(.bottom, 200)
+                .padding(.bottom, 250)
                 .offset(x:10)
             }
             .allowsHitTesting(false)
@@ -169,40 +168,40 @@ struct SkinJournalMainView: View {
     }
 
     // MARK: - Search Prompt
-    private var searchPrompt: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Color(red: 0.20, green: 0.40, blue: 0.60))
-
-            Text("Check active products on you!")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color(red: 0.20, green: 0.40, blue: 0.60))
-
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .frame(height: 50)
-        .background(
-            RoundedRectangle(cornerRadius: 25)
-                .fill(Color.white.opacity(0.9))
-                .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
-        )
-        .padding(.horizontal, 24)
-    }
+//    private var searchPrompt: some View {
+//        HStack(spacing: 10) {
+//            Image(systemName: "magnifyingglass")
+//                .font(.system(size: 18, weight: .semibold))
+//                .foregroundStyle(Color(red: 0.20, green: 0.40, blue: 0.60))
+//
+//            Text("Check active products on you!")
+//                .font(.system(size: 16, weight: .semibold))
+//                .foregroundStyle(Color(red: 0.20, green: 0.40, blue: 0.60))
+//
+//            Spacer()
+//        }
+//        .padding(.horizontal, 16)
+//        .frame(height: 50)
+//        .background(
+//            RoundedRectangle(cornerRadius: 25)
+//                .fill(Color.white.opacity(0.9))
+//                .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
+//        )
+//        .padding(.horizontal, 24)
+//    }
 
     // MARK: - Action Circles
     private var actionCircles: some View {
         HStack(spacing: 48) {
             ActionBubbleButton(
-                title: "Product\nvalidation skin",
+                title: "Analyze\nProduct",
                 action: onProductValidation,
                 amplitude: 0,
                 duration: 1
             )
 
             ActionBubbleButton(
-                title: "Skin\njournaling",
+                title: "Skin\nJournaling",
                 action: onSkinJournaling,
                 amplitude: 0,
                 duration: 1.2,
@@ -223,8 +222,15 @@ private struct EmptyStateCard: View {
     var body: some View {
         VStack {
             Text("No active product yet")
-                .font(.system(size: 19, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(Color(red: 0.15, green: 0.33, blue: 0.50))
+                .padding(.bottom, 4)
+            Text("press button “skin journaling”")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
+            Text("to add product you want to track")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.56))
         }
         .frame(maxWidth: .infinity)
         .frame(height: 195) // SAKLAK: sama dengan ActiveMilestoneCard (195pt)
