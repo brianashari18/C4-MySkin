@@ -217,8 +217,8 @@ Catatan: `simctl terminate` itu SIGKILL → UserDefaults TIDAK ter-flush ke disk
 - 2026-08-13: `UpcomingMilestoneCard` dirombak menjadi responsif. Timeline Milestone 2 sekarang memakai `GeometryReader` yang membagi lebar kartu menjadi lima node sama besar, menggantikan rangkaian intrinsic-width connector/flag/Spacer yang sebelumnya dapat memperlebar parent `ScrollView`. Header dibuat satu baris, timeline locked tetap blur, dan seluruh isi dijamin mengikuti lebar kartu.
 - 2026-08-13: Interaksi locked Milestone 2 diperbarui: seluruh permukaan `UpcomingMilestoneCard` menjadi hit area melalui rounded `contentShape`, sehingga ketukan pada header, timeline blur, maupun ruang kosong memunculkan peringatan. Timer 3 detik dihapus; bottom warning tetap tampil selama halaman Journey Main masih terbuka.
 - 2026-08-13: Warning locked Milestone 2 kini ditutup ketika user mengetuk area mana pun di luar kartu. Frame `UpcomingMilestoneCard` dilacak dalam coordinate space Journey Main; tap di dalam kartu tetap mempertahankan warning, sedangkan tap di luar menjalankan animasi dismiss. Margin foto/tombol yang dikembalikan user ke 32pt dipertahankan.
-
-
+- 2026-08-13: Tambah haptic feedback light impact khusus onboarding untuk tap-anywhere, CTA, pilihan skin type/sensitivity, dan tap note card name input via `OnboardingHaptics`.
+- 2026-08-13: Perluas haptic light impact ke seluruh feature Personalization, termasuk navigasi Back/Next, secondary action, completion tap, pilihan personalisasi, dan slider assessment per perubahan nilai.
 
 
 

@@ -85,6 +85,7 @@ struct PersonalizationView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             if viewModel.phase == .summary {
+                OnboardingHaptics.tap()
                 onComplete(viewModel.result)
             }
         }
@@ -465,8 +466,6 @@ private struct SummaryContent: View {
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
         .padding(.top, 130)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onComplete)
     }
 }
 

@@ -106,7 +106,10 @@ private struct PersonalizationSideNavigationButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            OnboardingHaptics.tap()
+            action()
+        } label: {
             Image(systemName: systemName)
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(isEnabled ? 1 : 0.72))
@@ -268,11 +271,16 @@ struct PersonalizationActionBar: View {
             )
 
             if let secondaryTitle, let secondaryAction {
-                Button(secondaryTitle, action: secondaryAction)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OnboardingStyle.primaryBlue.opacity(0.72))
-                    .frame(height: 44)
-                    .buttonStyle(.plain)
+                Button {
+                    OnboardingHaptics.tap()
+                    secondaryAction()
+                } label: {
+                    Text(secondaryTitle)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OnboardingStyle.primaryBlue.opacity(0.72))
+                        .frame(height: 44)
+                }
+                .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: 280)
@@ -328,7 +336,11 @@ struct PersonalizationSliderQuestion: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { gesture in
                             let y = min(max(gesture.location.y - knobSize / 2, 0), usableHeight)
-                            value = ((1 - y / usableHeight) * 10).rounded()
+                            let newValue = ((1 - y / usableHeight) * 10).rounded()
+                            guard newValue != value else { return }
+
+                            OnboardingHaptics.tap()
+                            value = newValue
                         }
                 )
                 .accessibilityElement()
