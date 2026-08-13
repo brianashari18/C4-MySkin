@@ -14,10 +14,6 @@ struct ImagePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ProductValidationViewModel
 
-    // Controls history sheets
-    @State private var showPickedProductSheet: Bool = false
-    @State private var showComparisonHistorySheet: Bool = false
-
     var body: some View {
         ZStack {
             // Soft ice blue background gradient
@@ -40,10 +36,10 @@ struct ImagePickerView: View {
                     Spacer()
                     HStack(spacing: 12) {
                         PickedProductButton {
-                            showPickedProductSheet = true
+                            viewModel.openPickedHistory()
                         }
                         ComparisonHistoryButton {
-                            showComparisonHistorySheet = true
+                            viewModel.openComparisonHistory()
                         }
                     }
                 }
@@ -75,7 +71,7 @@ struct ImagePickerView: View {
                 Spacer()
 
                 // MARK: - "Atau" Label
-                Text("Atau")
+                Text("Or")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Color(red: 0.20, green: 0.38, blue: 0.58))
                 
@@ -87,7 +83,7 @@ struct ImagePickerView: View {
                     generator.impactOccurred()
                     viewModel.openOther()
                 } label: {
-                    Text("Pencarian produk")
+                    Text("Search Products")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(Color.white)
                         .frame(maxWidth: .infinity)
@@ -104,12 +100,6 @@ struct ImagePickerView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .sheet(isPresented: $showPickedProductSheet) {
-            PickedProductHistoryView()
-        }
-        .sheet(isPresented: $showComparisonHistorySheet) {
-            ComparisonHistoryView()
-        }
     }
 }
 

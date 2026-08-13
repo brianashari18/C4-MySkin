@@ -53,18 +53,18 @@ struct SkinConcernTagPage: Identifiable, Hashable {
 }
 
 enum SkinConcernTag: String, CaseIterable, Identifiable {
-    case blackheads = "Komedo hitam"
-    case whiteheads = "Komedo putih"
-    case acne = "Jerawat merah"
-    case inflamedAcne = "Jerawat bernanah"
-    case deepAcne = "Jerawat dalam"
-    case darkSpots = "Bekas jerawat gelap"
-    case redness = "Kemerahan"
-    case flecks = "Flek"
-    case freckles = "Bercak coklat atau keabu-abuan"
-    case sunSpots = "Flek karena matahari"
-    case unevenTone = "Warna tidak merata"
-    case dullSkin = "Kulit Tampak Kusam"
+    case blackheads = "Blackheads"
+    case whiteheads = "Whiteheads"
+    case acne = "Red pimples"
+    case inflamedAcne = "Pustules"
+    case deepAcne = "Cystic acne"
+    case darkSpots = "Dark acne marks"
+    case redness = "Redness"
+    case flecks = "Flecks"
+    case freckles = "Brown spots"
+    case sunSpots = "Sun spots"
+    case unevenTone = "Uneven skin tone"
+    case dullSkin = "Dull skin"
 
     var id: String { rawValue }
 }

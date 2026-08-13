@@ -88,6 +88,12 @@ final class ProductValidationViewModel: ObservableObject {
     /// "Other…" tapped → ProductSearchView
     func openOther() { currentStep = .search }
 
+    /// Picked Product tapped → PickedProductHistoryView
+    func openPickedHistory() { currentStep = .pickedHistory }
+
+    /// Comparison History tapped → ComparisonHistoryView
+    func openComparisonHistory() { currentStep = .comparisonHistory }
+
     // MARK: - Camera Actions
 
     func startCamera() {

@@ -27,7 +27,7 @@ struct IngredientDetailSheetView: View {
                         ProgressView()
                             .scaleEffect(1.2)
                             .tint(Color.App.mediumBlue)
-                        Text("Memuat informasi bahan...")
+                        Text("Loading ingredient information...")
                             .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                             .foregroundStyle(Color.App.darkBlue.opacity(0.7))
                     }
@@ -37,7 +37,7 @@ struct IngredientDetailSheetView: View {
                         VStack(alignment: .leading, spacing: 20) {
                             // Header Banner
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Kosmetik & Dermatologi")
+                                Text("Cosmetics & Dermatology")
                                     .font(Font.App.nunitoRounded(size: 12, weight: .semibold))
                                     .foregroundStyle(Color.App.mediumBlue)
 
@@ -66,17 +66,17 @@ struct IngredientDetailSheetView: View {
                             // Quick Stats (Expected Time & Tolerability)
                             HStack(spacing: 12) {
                                 if let expectedTime = detail.expectedTime, !expectedTime.isEmpty {
-                                    statBox(title: "Waktu Hasil", value: expectedTime, icon: "clock")
+                                    statBox(title: "Expected Time", value: expectedTime, icon: "clock")
                                 }
                                 if let tolerability = detail.tolerability, !tolerability.isEmpty {
-                                    statBox(title: "Tolerabilitas", value: tolerability, icon: "shield.checkerboard")
+                                    statBox(title: "Tolerability", value: tolerability, icon: "shield.checkerboard")
                                 }
                             }
 
                             // Benefits (Manfaat Utama)
                             if !detail.benefits.isEmpty {
                                 VStack(alignment: .leading, spacing: 10) {
-                                    Text("Manfaat Utama")
+                                    Text("Key Benefits")
                                         .font(Font.App.nunitoRounded(size: 16, weight: .bold))
                                         .foregroundStyle(Color.App.darkBlue)
 
@@ -108,7 +108,7 @@ struct IngredientDetailSheetView: View {
                             // Side Effects / Concerns
                             if !detail.sideEffects.isEmpty {
                                 VStack(alignment: .leading, spacing: 10) {
-                                    Text("Perhatian & Efek Samping")
+                                    Text("Precautions & Side Effects")
                                         .font(Font.App.nunitoRounded(size: 16, weight: .bold))
                                         .foregroundStyle(Color.App.darkBlue)
 
@@ -139,7 +139,7 @@ struct IngredientDetailSheetView: View {
                             // Summary / Research Overview
                             if let summary = detail.summary ?? detail.whatTheResearchSays, !summary.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("Ringkasan Penelitian")
+                                    Text("Research Overview")
                                         .font(Font.App.nunitoRounded(size: 16, weight: .bold))
                                         .foregroundStyle(Color.App.darkBlue)
 
@@ -169,7 +169,7 @@ struct IngredientDetailSheetView: View {
                         Text(ingredientName)
                             .font(Font.App.nunitoRounded(size: 20, weight: .bold))
                             .foregroundStyle(Color.App.darkBlue)
-                        Text("Informasi mendalam tidak tersedia untuk bahan ini.")
+                        Text("Detailed information is not available for this ingredient.")
                             .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                             .foregroundStyle(Color.gray)
                     }

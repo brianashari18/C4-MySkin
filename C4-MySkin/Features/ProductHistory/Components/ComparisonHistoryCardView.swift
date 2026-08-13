@@ -15,75 +15,68 @@ struct ComparisonHistoryCardView: View {
             // Product 1 Row
             productRow(item: item.product1)
 
-            // VS Divider Line with centered pill badge
+            // VS Divider Line with centered vs label
             ZStack {
                 Rectangle()
-                    .fill(Color.App.mediumBlue.opacity(0.25))
+                    .fill(Color(red: 0.29, green: 0.56, blue: 0.89).opacity(0.35))
                     .frame(height: 1)
 
                 Text("vs")
-                    .font(Font.App.nunitoRounded(size: 13, weight: .bold))
-                    .foregroundStyle(Color.App.darkBlue)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color(red: 0.29, green: 0.56, blue: 0.89))
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 2)
                     .background(Color.white)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 8)
 
             // Product 2 Row
             productRow(item: item.product2)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.App.mediumBlue.opacity(0.35), lineWidth: 1.2)
-                )
-                .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 3)
+        .padding(14)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color(red: 0.29, green: 0.56, blue: 0.89), lineWidth: 1.5)
         )
+        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 2)
     }
 
     private func productRow(item: PickedProductItem) -> some View {
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.App.lightBlue.opacity(0.15))
-                    .frame(width: 40, height: 40)
-
+            Group {
                 if let imageURL = item.imageURL, let url = URL(string: imageURL) {
-                    CachedAsyncImage(url: url) {
-                        bottleIcon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
+
+                        CachedAsyncImage(url: url) {
+                            JarIconView()
+                        }
+                        .scaledToFit()
+                        .padding(4)
                     }
-                    .scaledToFit()
-                    .frame(width: 26, height: 26)
+                    .frame(width: 48, height: 48)
                 } else {
-                    bottleIcon
+                    JarIconView()
                 }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.name)
-                    .font(Font.App.nunitoRounded(size: 14, weight: .bold))
-                    .foregroundStyle(Color.App.darkBlue)
-                    .lineLimit(1)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
+                    .lineLimit(2)
 
                 Text(item.brand)
-                    .font(Font.App.nunitoRounded(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.App.mediumBlue)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(red: 0.35, green: 0.58, blue: 0.85))
+                    .lineLimit(1)
             }
 
             Spacer()
         }
-        .padding(.vertical, 4)
-    }
-
-    private var bottleIcon: some View {
-        Image(systemName: "drop.fill")
-            .font(.system(size: 18, weight: .semibold))
-            .foregroundStyle(Color.App.darkBlue)
     }
 }
 
