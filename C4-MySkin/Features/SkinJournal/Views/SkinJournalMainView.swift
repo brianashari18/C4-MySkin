@@ -261,26 +261,45 @@ struct ActiveMilestoneCard: View {
         journey.milestones.first { !$0.isCompleted }?.order ?? (progress.currentFlag <= 1 ? 1 : 2)
     }
 
+    private var fullProductName: String {
+        let brand = journey.product.brand.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = journey.product.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if brand.isEmpty { return name.isEmpty ? "Skincare Product" : name }
+        if name.lowercased().hasPrefix(brand.lowercased()) {
+            return name
+        }
+        return "\(brand) \(name)"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header dibuat satu baris agar kartu aktif selapang empty state.
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 4) {
+            // 1. Active Badge (Top)
+            HStack {
                 Text("Active")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Color.white)
-                    .padding(.horizontal, 11)
+                    .padding(.horizontal, 9)
                     .padding(.vertical, 4)
                     .background(Color(red: 0.38, green: 0.61, blue: 0.93))
                     .clipShape(Capsule())
 
-                Text(progress.isComplete ? "Journey Complete" : "Milestone #\(activeMilestoneOrder)")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
-
                 Spacer(minLength: 0)
             }
 
-            // 3. Timeline Layout: Milestone #1 (14 Dashes '-') vs Milestone #2 (4 Flags dengan konektor 3 dashes '- - -')
+            // 2. Selected Product Name & Brand
+            Text(fullProductName)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                .padding(.top, 4)
+                .lineLimit(1)
+
+            // 3. Milestone Title (Below product)
+            Text(progress.isComplete ? "Journey Complete" : "Milestone #\(activeMilestoneOrder)")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(Color(red: 0.16, green: 0.35, blue: 0.54))
+                .padding(.bottom, 4)
+
+            // 4. Timeline Layout: Milestone #1 vs Milestone #2
             if activeMilestoneOrder <= 1 {
                 // Milestone #1: 14 Dashes '-' antara Jar Icon & Flag
                 HStack(alignment: .top, spacing: 10) {
