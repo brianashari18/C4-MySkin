@@ -494,6 +494,14 @@ private struct CircleNodeIconView: View {
                     color: isSelected ? Color(red: 0.22, green: 0.43, blue: 0.65).opacity(0.35) : Color.clear,
                     radius: 5, x: 0, y: 2
                 )
+            
+            Image("MilestoneBottle")
+                .resizable()
+                .renderingMode(.template)
+                .scaledToFit()
+                .foregroundStyle(Color.white)
+                .frame(width: 32, height: 34)
+                .transformEffect(CGAffineTransform(translationX: 0, y: 4))
 
             Image(systemName: iconName)
                 .font(.system(size: isSelected ? 15 : 13, weight: .bold))
