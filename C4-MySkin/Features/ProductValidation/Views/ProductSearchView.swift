@@ -137,16 +137,15 @@ struct ProductSearchView: View {
             let query = viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
             guard !query.isEmpty else {
-                await viewModel.searchProducts()
+                if !viewModel.hasLoadedBrowseProducts {
+                    await viewModel.loadBrowseProducts()
+                }
                 return
             }
 
-            try? await Task.sleep(for: .milliseconds(350))
+            try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             await viewModel.searchProducts()
-        }
-        .task {
-            await viewModel.loadBrowseProducts()
         }
     }
 }

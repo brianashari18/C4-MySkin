@@ -134,16 +134,15 @@ struct ChooseProductView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .task {
-            await viewModel.loadBrowseProducts()
-        }
         .task(id: viewModel.searchQuery) {
             let query = viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !query.isEmpty else {
-                await viewModel.loadBrowseProducts()
+                if viewModel.products.isEmpty {
+                    await viewModel.loadBrowseProducts()
+                }
                 return
             }
-            try? await Task.sleep(for: .milliseconds(350))
+            try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             await viewModel.searchProducts(for: query)
         }

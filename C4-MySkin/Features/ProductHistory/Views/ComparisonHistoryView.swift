@@ -13,6 +13,7 @@ struct ComparisonHistoryView: View {
     @StateObject private var viewModel = ProductHistoryViewModel()
     @Environment(\.dismiss) private var dismiss
     var onBack: (() -> Void)? = nil
+    var onSelectComparison: ((ComparisonHistoryItem) -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -71,7 +72,12 @@ struct ComparisonHistoryView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: 14) {
                             ForEach(viewModel.comparisonHistory) { item in
-                                ComparisonHistoryCardView(item: item)
+                                Button {
+                                    onSelectComparison?(item)
+                                } label: {
+                                    ComparisonHistoryCardView(item: item)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, 24)

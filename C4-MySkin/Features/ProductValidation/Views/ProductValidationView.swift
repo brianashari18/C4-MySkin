@@ -52,15 +52,25 @@ struct ProductValidationView: View {
                 .transition(.opacity)
 
             case .pickedHistory:
-                PickedProductHistoryView(onBack: {
-                    viewModel.currentStep = .imagePicker
-                })
+                PickedProductHistoryView(
+                    onBack: {
+                        viewModel.currentStep = .imagePicker
+                    },
+                    onSelectProduct: { item in
+                        Task { await viewModel.loadPickedProduct(item) }
+                    }
+                )
                 .transition(.opacity)
 
             case .comparisonHistory:
-                ComparisonHistoryView(onBack: {
-                    viewModel.currentStep = .imagePicker
-                })
+                ComparisonHistoryView(
+                    onBack: {
+                        viewModel.currentStep = .imagePicker
+                    },
+                    onSelectComparison: { item in
+                        Task { await viewModel.loadComparisonHistory(item) }
+                    }
+                )
                 .transition(.opacity)
             }
         }

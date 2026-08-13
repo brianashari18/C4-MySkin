@@ -35,14 +35,28 @@ final class ChooseProductViewModel {
         errorMessage = nil
 
         do {
+            let queries = browseQueries
+            let allItems = try await withThrowingTaskGroup(of: [ProductSearchItem].self) { group in
+                for query in queries {
+                    group.addTask { [weak self] in
+                        guard let self else { return [] }
+                        return (try? await self.apiClient.searchProducts(query: query).results) ?? []
+                    }
+                }
+
+                var combined: [ProductSearchItem] = []
+                for try await items in group {
+                    combined.append(contentsOf: items)
+                }
+                return combined
+            }
+
             var seenIDs = Set<String>()
             var results: [SkincareProduct] = []
 
-            for query in browseQueries {
-                let response = try await apiClient.searchProducts(query: query)
-                for item in response.results {
-                    let product = Self.makeProduct(from: item)
-                    guard seenIDs.insert(product.id).inserted else { continue }
+            for item in allItems {
+                let product = Self.makeProduct(from: item)
+                if seenIDs.insert(product.id).inserted {
                     results.append(product)
                 }
             }

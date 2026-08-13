@@ -65,7 +65,9 @@ final class CameraService: NSObject, ObservableObject {
                 guard let self else { continuation.resume(); return }
 
                 self.session.beginConfiguration()
-                self.session.sessionPreset = .photo
+                if self.session.canSetSessionPreset(.photo) {
+                    self.session.sessionPreset = .photo
+                }
 
                 // — Input —
                 guard
@@ -80,17 +82,63 @@ final class CameraService: NSObject, ObservableObject {
                     continuation.resume()
                     return
                 }
+
+                // Configure Auto-Focus & Auto-Exposure for Macro/Product Labels
+                do {
+                    try device.lockForConfiguration()
+                    if device.isFocusModeSupported(.continuousAutoFocus) {
+                        device.focusMode = .continuousAutoFocus
+                    }
+                    if device.isAutoFocusRangeRestrictionSupported {
+                        device.autoFocusRangeRestriction = .none
+                    }
+                    if device.isExposureModeSupported(.continuousAutoExposure) {
+                        device.exposureMode = .continuousAutoExposure
+                    }
+                    if device.isLowLightBoostSupported {
+                        device.automaticallyEnablesLowLightBoostWhenAvailable = true
+                    }
+                    device.unlockForConfiguration()
+                } catch {}
+
                 self.session.addInput(input)
                 self.videoInput = input
 
                 // — Output —
                 if self.session.canAddOutput(self.photoOutput) {
                     self.session.addOutput(self.photoOutput)
+                    self.photoOutput.isHighResolutionCaptureEnabled = true
+                    if self.photoOutput.isLivePhotoCaptureSupported {
+                        self.photoOutput.isLivePhotoCaptureEnabled = false
+                    }
+                    if #available(iOS 13.0, *) {
+                        self.photoOutput.maxPhotoQualityPrioritization = .quality
+                    }
                 }
 
                 self.session.commitConfiguration()
                 continuation.resume()
             }
+        }
+    }
+
+    // MARK: - Tap To Focus
+
+    func focus(at point: CGPoint) {
+        sessionQueue.async { [weak self] in
+            guard let device = self?.videoInput?.device else { return }
+            do {
+                try device.lockForConfiguration()
+                if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.autoFocus) {
+                    device.focusPointOfInterest = point
+                    device.focusMode = .autoFocus
+                }
+                if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.autoExpose) {
+                    device.exposurePointOfInterest = point
+                    device.exposureMode = .autoExpose
+                }
+                device.unlockForConfiguration()
+            } catch {}
         }
     }
 
@@ -118,6 +166,10 @@ final class CameraService: NSObject, ObservableObject {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             let settings = AVCapturePhotoSettings()
+            settings.isHighResolutionPhotoEnabled = true
+            if #available(iOS 13.0, *) {
+                settings.photoQualityPrioritization = .quality
+            }
             self.photoOutput.capturePhoto(with: settings, delegate: self)
         }
     }
