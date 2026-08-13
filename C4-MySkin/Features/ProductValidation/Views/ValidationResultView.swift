@@ -151,7 +151,7 @@ struct ValidationResultView: View {
                     viewModel.finish()
                     dismiss()
                 } label: {
-                    Text("Selesai")
+                    Text("Done")
                         .font(Font.App.nunitoRounded(size: 18, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -386,7 +386,7 @@ struct ValidationResultView: View {
                         }
                     } label: {
                         HStack {
-                            Text(isIngredientsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(result.ingredientChecks.count - displayLimit)+)")
+                            Text(isIngredientsExpanded ? "Show Less" : "See More (\(result.ingredientChecks.count - displayLimit)+)")
                                 .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                 .foregroundStyle(Color.App.mediumBlue)
                             Image(systemName: isIngredientsExpanded ? "chevron.up" : "chevron.down")
@@ -466,7 +466,7 @@ struct ValidationResultView: View {
                         }
                     } label: {
                         HStack {
-                            Text(isIngredientsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(totalMasterCount - displayLimit)+)")
+                            Text(isIngredientsExpanded ? "Show Less" : "See More (\(totalMasterCount - displayLimit)+)")
                                 .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                 .foregroundStyle(Color.App.mediumBlue)
                             Image(systemName: isIngredientsExpanded ? "chevron.up" : "chevron.down")
@@ -720,7 +720,7 @@ struct ValidationResultView: View {
                             }
                         } label: {
                             HStack {
-                                Text(isBenefitsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(result.benefitItems.count - displayLimit)+)")
+                                Text(isBenefitsExpanded ? "Show Less" : "See More (\(result.benefitItems.count - displayLimit)+)")
                                     .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                     .foregroundStyle(Color.App.mediumBlue)
                                 Image(systemName: isBenefitsExpanded ? "chevron.up" : "chevron.down")
@@ -802,7 +802,7 @@ struct ValidationResultView: View {
                             }
                         } label: {
                             HStack {
-                                Text(isBenefitsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(maxCount - displayLimit)+)")
+                                Text(isBenefitsExpanded ? "Show Less" : "See More (\(maxCount - displayLimit)+)")
                                     .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                     .foregroundStyle(Color.App.mediumBlue)
                                 Image(systemName: isBenefitsExpanded ? "chevron.up" : "chevron.down")
@@ -854,7 +854,7 @@ struct ValidationResultView: View {
                             }
                         } label: {
                             HStack {
-                                Text(isConcernsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(result.concernItems.count - displayLimit)+)")
+                                Text(isConcernsExpanded ? "Show Less" : "See More (\(result.concernItems.count - displayLimit)+)")
                                     .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                     .foregroundStyle(Color.App.mediumBlue)
                                 Image(systemName: isConcernsExpanded ? "chevron.up" : "chevron.down")
@@ -935,7 +935,7 @@ struct ValidationResultView: View {
                             }
                         } label: {
                             HStack {
-                                Text(isConcernsExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya (\(maxCount - displayLimit)+)")
+                                Text(isConcernsExpanded ? "Show Less" : "See More (\(maxCount - displayLimit)+)")
                                     .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                                     .foregroundStyle(Color.App.mediumBlue)
                                 Image(systemName: isConcernsExpanded ? "chevron.up" : "chevron.down")
@@ -997,7 +997,7 @@ struct ValidationResultView: View {
                 showPersonalizationPage = true
             }
         } label: {
-            Text("Selesaikan Kuis Personalisasi")
+            Text("Complete Personalization Quiz")
                 .font(Font.App.nunitoRounded(size: 13, weight: .bold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
@@ -1022,7 +1022,7 @@ struct ValidationResultView: View {
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "camera").font(.system(size: 15))
-                    Text("Kamera").font(Font.App.nunitoRounded(size: 16, weight: .medium))
+                    Text("Camera").font(Font.App.nunitoRounded(size: 16, weight: .medium))
                 }
                 .foregroundStyle(Color.App.textDark)
                 .frame(maxWidth: .infinity, alignment: .leading)

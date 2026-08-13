@@ -11,10 +11,10 @@ struct ValidationLoadingView: View {
 
     @State private var loadingTextIndex = 0
     private let loadingMessages = [
-        "Menganalisis kandungan produk...",
-        "Mencocokkan dengan profil kulitmu...",
-        "Menghitung skor keamanan bahan...",
-        "Menyiapkan ringkasan rekomendasi..."
+        "Analyzing product ingredients...",
+        "Matching with your skin profile...",
+        "Calculating ingredient safety scores...",
+        "Preparing recommendation summary..."
     ]
 
     var body: some View {
@@ -50,7 +50,7 @@ struct ValidationLoadingView: View {
                         .controlSize(.large)
                         .tint(Color(red: 0.29, green: 0.56, blue: 0.89))
 
-                    Text("Memvalidasi Produk")
+                    Text("Validating Product")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
 

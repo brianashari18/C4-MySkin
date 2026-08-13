@@ -26,11 +26,11 @@ enum OnboardingStep: Int, CaseIterable {
 }
 
 enum SkinType: String, CaseIterable, Identifiable {
-    case dry = "Kering"
+    case dry = "Dry"
     case normal = "Normal"
-    case oily = "Berminyak"
-    case combination = "Kombinasi"
-    case notSureYet = "Belum Yakin"
+    case oily = "Oily"
+    case combination = "Combination"
+    case notSureYet = "Not Sure Yet"
 
     var id: String { rawValue }
 
@@ -59,10 +59,10 @@ enum SkinType: String, CaseIterable, Identifiable {
 
 enum SkinSensitivity: String, CaseIterable, Identifiable {
     case normalResistant = "Normal / Resistant"
-    case slightlySensitive = "Agak sensitif"
-    case sensitive = "Sensitif"
-    case verySensitive = "Sangat sensitif"
-    case notSureYet = "Belum Yakin"
+    case slightlySensitive = "Slightly Sensitive"
+    case sensitive = "Sensitive"
+    case verySensitive = "Very Sensitive"
+    case notSureYet = "Not Sure Yet"
 
     var id: String { rawValue }
 

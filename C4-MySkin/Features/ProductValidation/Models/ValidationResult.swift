@@ -16,6 +16,8 @@ enum ValidationStep {
     case result
     case search
     case personalization
+    case pickedHistory
+    case comparisonHistory
 }
 
 // MARK: - Rich Structured Item Models for Wireframe Sections

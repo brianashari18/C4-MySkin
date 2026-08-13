@@ -85,7 +85,7 @@ struct PhotoReviewView: View {
                                     ProgressView()
                                         .tint(.white)
                                 } else {
-                                    Text("Validasi")
+                                    Text("Validate")
                                         .font(Font.App.nunitoRounded(size: 17, weight: .bold))
                                         .foregroundStyle(.white)
                                 }
@@ -100,11 +100,11 @@ struct PhotoReviewView: View {
                         }
                         .disabled(viewModel.isLoading)
 
-                        // Ulangi — outlined secondary
+                        // Retake — outlined secondary
                         Button {
                             viewModel.retake()
                         } label: {
-                            Text("Ulangi")
+                            Text("Retake")
                                 .font(Font.App.nunitoRounded(size: 17, weight: .bold))
                                 .foregroundStyle(Color.App.mediumBlue)
                                 .frame(maxWidth: .infinity)

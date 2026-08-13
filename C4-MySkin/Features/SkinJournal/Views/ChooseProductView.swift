@@ -163,7 +163,7 @@ struct ChooseProductView: View {
             Button {
                 Task { await viewModel.retry() }
             } label: {
-                Text("Coba Lagi")
+                Text("Try Again")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)

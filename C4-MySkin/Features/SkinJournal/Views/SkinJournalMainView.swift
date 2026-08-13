@@ -153,19 +153,7 @@ struct SkinJournalMainView: View {
 
             Spacer()
 
-            HStack(spacing: 12) {
-                Button(action: {
-                    triggerHaptic()
-                }) {
-                    Image(systemName: "heart")
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Saved items")
-
-                Button(action: {
+            Button(action: {
                     triggerHaptic()
                     onProfile()
                 }) {
@@ -176,7 +164,6 @@ struct SkinJournalMainView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Profile")
-            }
         }
         .padding(.horizontal, 24)
     }

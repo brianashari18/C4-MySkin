@@ -47,7 +47,7 @@ struct ProductSearchView: View {
                         .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
                         .font(.system(size: 16))
 
-                    TextField("Cari produk...", text: $viewModel.searchText)
+                    TextField("Search product...", text: $viewModel.searchText)
                         .font(Font.App.nunitoRounded(size: 16))
                         .foregroundStyle(Color.App.textDark)
                         .textInputAutocapitalization(.never)
@@ -65,7 +65,7 @@ struct ProductSearchView: View {
                                 .foregroundStyle(Color.App.mediumBlue.opacity(0.6))
                                 .font(.system(size: 16))
                         }
-                        .accessibilityLabel("Cari produk")
+                        .accessibilityLabel("Search product")
                     }
                 }
                 .padding(.horizontal, 14)
@@ -115,13 +115,13 @@ struct ProductSearchView: View {
                             .opacity(viewModel.isSearching ? 0.6 : 1.0)
                             .animation(.easeInOut(duration: 0.2), value: viewModel.isSearching)
                         } else if !viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !viewModel.isSearching {
-                            Text("Produk tidak ditemukan.")
+                            Text("Product not found.")
                                 .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                                 .foregroundStyle(Color.App.darkBlue)
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.top, 24)
                         } else {
-                            Text("Jelajahi produk di bawah atau ketik untuk mencari.")
+                            Text("Browse products below or type to search.")
                                 .font(Font.App.nunitoRounded(size: 14, weight: .medium))
                                 .foregroundStyle(Color.App.darkBlue.opacity(0.75))
                                 .frame(maxWidth: .infinity, alignment: .center)

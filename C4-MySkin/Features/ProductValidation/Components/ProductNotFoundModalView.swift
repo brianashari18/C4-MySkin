@@ -21,7 +21,7 @@ struct ProductNotFoundModalView: View {
 
             // White rounded popup card
             VStack(spacing: 22) {
-                Text("Produk Tidak\nDitemukan")
+                Text("Product Not\nFound")
                     .font(Font.App.nunitoRounded(size: 20, weight: .bold))
                     .foregroundStyle(Color.App.textDark)
                     .multilineTextAlignment(.center)
@@ -30,7 +30,7 @@ struct ProductNotFoundModalView: View {
                 Button {
                     onScanAnother()
                 } label: {
-                    Text("Pindai Produk Lain")
+                    Text("Scan Another Product")
                         .font(Font.App.nunitoRounded(size: 15, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 24)

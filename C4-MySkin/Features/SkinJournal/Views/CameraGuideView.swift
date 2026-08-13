@@ -39,7 +39,7 @@ struct CameraGuideView: View {
                 .padding(.top, 8)
 
                 // Title
-                Text("Posisikan wajahmu\npada frame")
+                Text("Position your face\nin the frame")
                     .font(.system(size: 24, weight: .bold))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color(red: 0.11, green: 0.27, blue: 0.42))
@@ -70,7 +70,7 @@ struct CameraGuideView: View {
                         HStack(spacing: 6) {
                             Image(systemName: isFaceCentered ? "checkmark.circle.fill" : "person.crop.artframe")
                                 .font(.system(size: 14, weight: .bold))
-                            Text(isFaceCentered ? "Wajah Pas di Tengah ✓" : "Posisikan Wajah di Tengah")
+                            Text(isFaceCentered ? "Face Centered ✓" : "Center Your Face")
                                 .font(.system(size: 13, weight: .bold))
                         }
                         .foregroundStyle(isFaceCentered ? Color(red: 0.20, green: 0.65, blue: 0.32) : Color(red: 0.20, green: 0.38, blue: 0.56))
@@ -87,9 +87,9 @@ struct CameraGuideView: View {
                             VStack(spacing: 10) {
                                 Image(systemName: "video.slash.fill")
                                     .font(.system(size: 30))
-                                Text("Akses kamera ditolak")
+                                Text("Camera access denied")
                                     .font(.system(size: 16, weight: .bold))
-                                Text("Izinkan kamera di Settings → C4-MySkin")
+                                Text("Allow camera access in Settings → C4-MySkin")
                                     .font(.system(size: 13))
                                     .multilineTextAlignment(.center)
                             }
@@ -107,7 +107,7 @@ struct CameraGuideView: View {
                                 Button {
                                     CameraSessionManager.shared.prepare()
                                 } label: {
-                                    Text("Coba Lagi")
+                                    Text("Try Again")
                                         .font(.system(size: 15, weight: .bold))
                                         .foregroundStyle(.white)
                                         .padding(.horizontal, 24)
@@ -165,7 +165,7 @@ struct CameraGuideView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Take Photo")
 
-                    Text("Posisikan wajah tepat di tengah frame")
+                    Text("Position your face right in the center of the frame")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(Color(red: 0.60, green: 0.68, blue: 0.78))
                         .frame(height: 18)

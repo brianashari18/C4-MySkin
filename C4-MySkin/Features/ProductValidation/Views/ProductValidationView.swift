@@ -50,6 +50,18 @@ struct ProductValidationView: View {
                     viewModel.currentStep = .result
                 }
                 .transition(.opacity)
+
+            case .pickedHistory:
+                PickedProductHistoryView(onBack: {
+                    viewModel.currentStep = .imagePicker
+                })
+                .transition(.opacity)
+
+            case .comparisonHistory:
+                ComparisonHistoryView(onBack: {
+                    viewModel.currentStep = .imagePicker
+                })
+                .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.currentStep)
