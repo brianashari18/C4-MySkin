@@ -6,6 +6,13 @@
 //
 
 import SwiftUI
+import UIKit
+
+enum OnboardingHaptics {
+    static func tap() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+}
 
 struct OnboardingPrimaryButton: View {
     let title: String
@@ -18,7 +25,11 @@ struct OnboardingPrimaryButton: View {
     var body: some View {
         let buttonShape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
-        Button(action: action) {
+        Button {
+            guard isEnabled else { return }
+            OnboardingHaptics.tap()
+            action()
+        } label: {
             Text(title)
                 .font(.system(size: fontSize, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
@@ -44,7 +55,10 @@ struct OnboardingOptionButton: View {
     var body: some View {
         let optionShape = RoundedRectangle(cornerRadius: 15, style: .continuous)
 
-        Button(action: action) {
+        Button {
+            OnboardingHaptics.tap()
+            action()
+        } label: {
             Text(title)
                 .font(.system(size: fontSize, weight: .semibold, design: .rounded))
                 .foregroundStyle(isSelected ? .white : OnboardingStyle.buttonBlue)

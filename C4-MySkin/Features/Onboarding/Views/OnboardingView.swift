@@ -130,6 +130,7 @@ private struct OnboardingConversationScreen: View {
         .contentShape(Rectangle())
         .onTapGesture {
             guard step.advancesOnTap else { return }
+            OnboardingHaptics.tap()
             action()
         }
     }
@@ -324,6 +325,7 @@ private struct NameInputScreen: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
+                OnboardingHaptics.tap()
                 isNameFocused = true
             }
             .offset(y: -24)
